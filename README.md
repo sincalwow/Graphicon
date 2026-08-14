@@ -155,6 +155,8 @@ pnpm test           # 运行全部质量检查
 | --- | --- | --- |
 | [用户使用手册](docs/USER_GUIDE_zh-CN.md) | 设计师、内容创作者和协作者 | 从启动、基础编辑到路径、AI、协作、导出与故障排查的完整操作说明。 |
 | [架构设计文档](docs/ARCHITECTURE_zh-CN.md) | 维护者、部署人员和插件开发者 | 前后端边界、历史、路径几何、AI、协作、插件、测试与演进建议。 |
+| [Cloudflare 部署指南](docs/CLOUDFLARE_DEPLOYMENT_zh-CN.md) | 静态演示与 Cloudflare 用户 | Pages 静态模式、Cloudflare 代理 + VPS 全功能模式、DNS、TLS、WebSocket 和未来 Workers 边界。 |
+| [VPS 生产部署指南](docs/VPS_DEPLOYMENT_zh-CN.md) | 服务器维护者 | Ubuntu、Node.js、systemd、Nginx、HTTPS、Cloudflare、环境变量、更新、回滚与验收。 |
 
 ## 技术构成
 
