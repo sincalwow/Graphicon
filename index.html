@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
         :root {
             --bg-body: #121212;
@@ -24,8 +24,12 @@
             --guide-color: #00e0ff;
         }
         * { box-sizing: border-box; user-select: none; outline: none; }
+        input, textarea { user-select: text; }
+        button:focus-visible, input:focus-visible, label:focus-within {
+            outline: 2px solid var(--accent-light); outline-offset: 2px;
+        }
         body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); color: var(--text-main); height: 100vh; display: flex; overflow: hidden; }
-        
+
         /* 左侧侧边栏 */
         .sidebar {
             width: 320px; background: var(--bg-sidebar); border-right: 1px solid var(--border);
@@ -38,7 +42,7 @@
         }
         .logo-icon { color: var(--accent); }
         .logo-area::after { content: 'PRO+'; position: absolute; right: 16px; background: var(--accent); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-        
+
         .text-tool-box { padding: 15px; border-bottom: 1px solid var(--border); background: #222; }
         .tool-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
         .std-input {
@@ -46,15 +50,23 @@
             border-radius: 6px; font-size: 13px; width: 100%; transition: border 0.2s;
         }
         .std-input:focus { border-color: var(--accent-light); }
-        
+
         .icon-btn {
             background: var(--bg-tool); border: 1px solid #444; color: #ccc; width: 36px; height: 36px;
             border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
         }
         .icon-btn:hover { background: #444; color: #fff; transform: translateY(-2px); border-color: #666; }
         .icon-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 8px rgba(55, 148, 255, 0.5); }
-        
+
         .upload-box { padding: 12px; border-bottom: 1px solid var(--border); }
+        .project-tools { padding: 12px; border-bottom: 1px solid var(--border); background: #202020; }
+        .project-tool-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+        .project-btn {
+            min-height: 34px; border: 1px solid #464646; border-radius: 6px; background: var(--bg-tool); color: #d7d7d7;
+            cursor: pointer; font-size: 11px; font-weight: 600; transition: background .18s, border-color .18s, color .18s, transform .18s;
+        }
+        .project-btn:hover { background: #3a3a3a; border-color: var(--accent); color: #fff; transform: translateY(-1px); }
+        .project-btn:active, .btn-main:active, .icon-btn:active, .tool-icon:active, .a-btn:active { transform: scale(.97); }
         .btn-main {
             width: 100%; padding: 12px; background: linear-gradient(90deg, #3794ff, #0060c2);
             color: white; border-radius: 8px; cursor: pointer; text-align: center; font-size: 14px; font-weight: 600;
@@ -62,11 +74,11 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         .btn-main:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
-        
+
         .library-container { flex: 1; overflow-y: auto; padding-bottom: 20px; }
         .library-container::-webkit-scrollbar { width: 6px; }
         .library-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
-        
+
         .accordion-item { border-bottom: 1px solid #333; }
         .accordion-header {
             width: 100%; padding: 12px 15px; background: #252525; color: var(--text-sub);
@@ -77,10 +89,10 @@
         .accordion-header.active { color: var(--accent); border-left: 3px solid var(--accent); background: #222; }
         .accordion-header i { transition: transform 0.3s; font-size: 12px; }
         .accordion-header.active i { transform: rotate(180deg); }
-        
+
         .accordion-content { display: none; padding: 10px; background: var(--bg-sidebar); }
         .accordion-content.show { display: block; }
-        
+
         .assets-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
         .asset-item {
             aspect-ratio: 1; background: var(--bg-tool); border-radius: 6px; display: flex; align-items: center; justify-content: center;
@@ -89,7 +101,7 @@
         .asset-item:hover { background: #444; border-color: var(--accent); transform: scale(1.1); z-index: 2; box-shadow: 0 6px 15px rgba(0,0,0,0.5); }
         .asset-item svg { width: 100%; height: 100%; fill: #bbb; display: block; transition: fill 0.2s; }
         .asset-item:hover svg { fill: var(--accent-light); }
-        
+
         /* 画布区域 */
         .workspace { flex: 1; position: relative; background: #0f0f0f; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         .canvas-bg {
@@ -97,15 +109,15 @@
             background-image: linear-gradient(45deg, #222 25%, transparent 25%), linear-gradient(-45deg, #222 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #222 75%), linear-gradient(-45deg, transparent 75%, #222 75%);
             background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0px; position: relative;
         }
-        
+
         .float-tools {
             position: absolute; top: 20px; background: rgba(30, 30, 30, 0.95); padding: 8px 20px; border-radius: 50px;
             display: flex; gap: 10px; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.12); z-index: 100;
             box-shadow: 0 5px 15px rgba(0,0,0,0.4);
         }
         /* Tooltip 样式 */
-        .tool-icon { 
-            color: #ccc; font-size: 16px; cursor: pointer; padding: 0; border:none; background:none; transition:0.2s; 
+        .tool-icon {
+            color: #ccc; font-size: 16px; cursor: pointer; padding: 0; border:none; background:none; transition:0.2s;
             width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
             position: relative;
         }
@@ -116,23 +128,23 @@
             white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 10;
         }
         .tool-icon:hover::after { opacity: 0.8; }
-        
+
         .tool-icon.delete:hover { color: var(--danger); background: rgba(244, 67, 54, 0.1); }
         .tool-icon.save-png { color: var(--success); }
         .tool-icon.save-png:hover { background: rgba(76, 175, 80, 0.1); }
         .tool-icon.save-svg { color: #FF9800; }
         .tool-icon.save-svg:hover { background: rgba(255, 152, 0, 0.1); }
-        
+
         .sep { width: 1px; background: #555; height: 20px; margin: 8px 4px; }
-        
+
         /* 属性面板 */
-        .props-panel { 
-            width: 260px; background: var(--bg-sidebar); border-left: 1px solid var(--border); 
+        .props-panel {
+            width: 260px; background: var(--bg-sidebar); border-left: 1px solid var(--border);
             display: flex; flex-direction: column; padding: 15px; gap: 15px; z-index: 20; box-shadow: -5px 0 15px rgba(0,0,0,0.3);
         }
         .panel-card { background: var(--bg-tool); border-radius: 8px; padding: 15px; border: 1px solid #383838; }
         .panel-head { font-size: 11px; color: #888; margin-bottom: 10px; font-weight: 600; display:flex; justify-content:space-between; }
-        
+
         .size-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .size-group { display: flex; align-items: center; gap: 8px; }
         .size-group label { font-size: 12px; color:#aaa; width: 20px; }
@@ -140,13 +152,13 @@
         .align-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .a-btn { background: #444; border:none; color: #ddd; padding: 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
         .a-btn:hover { background: #555; }
-        
+
         .color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 8px; }
-        
-        .c-dot { 
-            width: 30px; height: 30px; border-radius: 50%; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1); 
-            position: relative; cursor: pointer; overflow: hidden; 
+
+        .c-dot {
+            width: 30px; height: 30px; border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.1);
+            position: relative; cursor: pointer; overflow: hidden;
             background-color: #fff;
             background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%);
             background-size: 10px 10px;
@@ -154,7 +166,7 @@
         }
         .c-dot:hover { transform: scale(1.15); box-shadow: 0 0 0 2px var(--accent); z-index: 2; }
         .c-dot input { position: absolute; top:-50%; left:-50%; width: 200%; height: 200%; opacity: 0; cursor: pointer; }
-        
+
         .img-palette-tag { font-size: 9px; color: #777; margin-bottom: 5px; display: block; }
         .tolerance-box { margin-top: 10px; padding-top: 10px; border-top: 1px solid #444; }
         .tolerance-range { width: 100%; accent-color: var(--accent); cursor: pointer; display: block; margin-top:5px; height: 4px; border-radius: 2px;}
@@ -164,7 +176,7 @@
             font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 999;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
-        
+
         .status-bar {
             position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
             background: rgba(30,30,30,0.8); padding: 8px 20px; border-radius: 20px;
@@ -172,7 +184,7 @@
             border: 1px solid rgba(255,255,255,0.1); display: flex; gap: 15px; pointer-events: none;
         }
         .status-item i { color: var(--accent); margin-right: 5px; }
-        
+
         .grid-toggle {
             position: absolute; bottom: 20px; right: 20px; background: rgba(30,30,30,0.8);
             padding: 8px 15px; border-radius: 20px; font-size: 12px; color: #ccc;
@@ -181,7 +193,29 @@
         }
         .grid-toggle:hover { background: rgba(55, 148, 255, 0.2); color: #fff; }
         .grid-toggle.active { background: rgba(55, 148, 255, 0.3); color: var(--accent-light); border-color: var(--accent); }
-        
+        .workspace.drag-over::after {
+            content: '松开以导入图片或 SVG'; position: absolute; inset: 16px; border: 2px dashed var(--accent-light);
+            border-radius: 12px; background: rgba(55, 148, 255, .12); color: #fff; display: grid; place-items: center;
+            font-size: 16px; font-weight: 700; letter-spacing: .4px; z-index: 150; pointer-events: none;
+        }
+        .canvas-actions { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+        .canvas-actions .size-input { min-width: 0; }
+        .apply-btn { flex: 1; min-height: 32px; border: 0; border-radius: 5px; background: #3a78c4; color: #fff; cursor: pointer; font-weight: 700; font-size: 12px; }
+        .apply-btn:hover { background: var(--accent); }
+        .check-line { display: flex; align-items: center; gap: 7px; margin-top: 10px; color: #aaa; font-size: 12px; cursor: pointer; }
+        @media (max-width: 1100px) {
+            .sidebar { width: 260px; }
+            .props-panel { width: 220px; padding: 10px; }
+            .assets-grid { grid-template-columns: repeat(5, 1fr); }
+            .float-tools { padding: 6px 10px; gap: 4px; }
+        }
+        @media (max-width: 760px) {
+            body { min-width: 760px; overflow: auto; }
+            .sidebar { width: 230px; }
+            .props-panel { width: 205px; }
+            .status-bar { bottom: 9px; }
+        }
+
         .hint {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             color: #555; font-size: 18px; text-align: center; max-width: 300px;
@@ -194,7 +228,7 @@
 <body>
     <div class="sidebar">
         <div class="logo-area"><i class="fas fa-shapes logo-icon"></i> &nbsp; GRAPHIC PRO</div>
-        
+
         <div class="text-tool-box">
             <div class="panel-head" style="color:#ddd; margin-bottom:10px;">文字工坊</div>
             <div class="tool-row">
@@ -208,19 +242,27 @@
             </div>
         </div>
         <div class="upload-box">
-            <label class="btn-main">
-                <i class="fas fa-cloud-upload-alt"></i> 上传素材
-                <input type="file" id="fileIn" accept="image/*, .svg" style="display:none">
+            <label class="btn-main" title="导入本地图片或 SVG">
+                <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i> 上传素材
+                <input type="file" id="fileIn" accept="image/*,.svg" style="display:none">
             </label>
+        </div>
+        <div class="project-tools" aria-label="项目文件操作">
+            <div class="project-tool-row">
+                <button type="button" class="project-btn" onclick="newDocument()" title="清空画布并新建设计"><i class="fas fa-file" aria-hidden="true"></i> 新建</button>
+                <button type="button" class="project-btn" onclick="saveProject()" title="下载可继续编辑的项目文件"><i class="fas fa-save" aria-hidden="true"></i> 保存</button>
+                <button type="button" class="project-btn" onclick="openProject()" title="打开 Graphicon 项目文件"><i class="fas fa-folder-open" aria-hidden="true"></i> 打开</button>
+            </div>
+            <input type="file" id="projectIn" accept="application/json,.graphicon,.json" style="display:none">
         </div>
         <div class="library-container" id="lib-root"></div>
     </div>
     <div class="workspace">
         <div class="float-tools">
-            <button class="tool-icon" onclick="historyManager.undo()" title="撤销 (Ctrl+Z)"><i class="fas fa-undo"></i></button>
-            <button class="tool-icon" onclick="historyManager.redo()" title="重做 (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+            <button type="button" class="tool-icon" onclick="historyManager.undo()" title="撤销 (Ctrl+Z)" aria-label="撤销"><i class="fas fa-undo" aria-hidden="true"></i></button>
+            <button type="button" class="tool-icon" onclick="historyManager.redo()" title="重做 (Ctrl+Y)" aria-label="重做"><i class="fas fa-redo" aria-hidden="true"></i></button>
             <div class="sep"></div>
-            
+
             <button class="tool-icon delete" onclick="act('del')" title="删除 (Delete)"><i class="fas fa-trash"></i></button>
             <button class="tool-icon" onclick="act('copy')" title="复制 (Ctrl+C)"><i class="fas fa-copy"></i></button>
             <div class="sep"></div>
@@ -233,20 +275,20 @@
             <button class="tool-icon save-png" onclick="act('savePng')" title="导出透明PNG"><i class="fas fa-image"></i></button>
             <button class="tool-icon save-svg" onclick="act('saveSvg')" title="导出SVG矢量图"><i class="fas fa-bezier-curve"></i></button>
         </div>
-        
+
         <div class="canvas-bg">
             <canvas id="c"></canvas>
             <div class="hint" id="canvasHint">点击左侧面板添加元素<br>或<strong>拖入图片</strong>开始设计</div>
         </div>
-        
+
         <div id="toast">Ready</div>
-        
+
         <div class="status-bar">
             <div class="status-item"><i class="fas fa-mouse-pointer"></i> 选择: <span id="selectedObj">无</span></div>
             <div class="status-item"><i class="fas fa-layer-group"></i> 图层: <span id="objCount">0</span></div>
-            <div class="status-item"><i class="fas fa-expand"></i> 画布: 800×800px</div>
+            <div class="status-item"><i class="fas fa-expand" aria-hidden="true"></i> 画布: <span id="canvasSize">800×800px</span></div>
         </div>
-        
+
         <div class="grid-toggle" id="gridToggle" onclick="toggleGrid()">
             <i class="fas fa-th"></i> 网格参考
         </div>
@@ -256,14 +298,23 @@
             <div class="panel-head">尺寸 (px)</div>
             <div class="size-inputs">
                 <div class="size-group">
-                    <label>W</label>
-                    <input type="number" id="inpW" class="size-input" onchange="setSize('w', this.value)" placeholder="宽度">
+                    <label for="inpW">W</label>
+                    <input type="number" id="inpW" class="size-input" onchange="setSize('w', this.value)" placeholder="宽度" min="1">
                 </div>
                 <div class="size-group">
-                    <label>H</label>
-                    <input type="number" id="inpH" class="size-input" onchange="setSize('h', this.value)" placeholder="高度">
+                    <label for="inpH">H</label>
+                    <input type="number" id="inpH" class="size-input" onchange="setSize('h', this.value)" placeholder="高度" min="1">
                 </div>
             </div>
+            <label class="check-line"><input type="checkbox" id="lockRatio" checked style="accent-color: var(--accent);"> 保持比例</label>
+        </div>
+        <div class="panel-card">
+            <div class="panel-head">画布尺寸 (px)</div>
+            <div class="size-inputs">
+                <div class="size-group"><label for="canvasW">W</label><input type="number" id="canvasW" class="size-input" value="800" min="64" max="4096" inputmode="numeric"></div>
+                <div class="size-group"><label for="canvasH">H</label><input type="number" id="canvasH" class="size-input" value="800" min="64" max="4096" inputmode="numeric"></div>
+            </div>
+            <div class="canvas-actions"><button type="button" class="apply-btn" onclick="applyCanvasSize()">应用画布尺寸</button></div>
         </div>
         <div class="panel-card">
             <div class="panel-head">对齐</div>
@@ -276,22 +327,22 @@
                 <button class="a-btn" onclick="align('bottom')"><i class="fas fa-align-right fa-rotate-90"></i></button>
             </div>
         </div>
-        
+
         <div class="panel-card">
             <div class="panel-head">透明度 <span id="op-val">100%</span></div>
-            <input type="range" style="width:100%; accent-color:var(--accent)" min="0" max="1" step="0.1" value="1" oninput="setOpacity(this.value)">
+            <input type="range" id="opacityRange" style="width:100%; accent-color:var(--accent)" min="0" max="1" step="0.05" value="1" oninput="setOpacity(this.value)">
         </div>
-        
+
         <div class="panel-card" id="color-box" style="display:none">
             <div class="panel-head">色彩管理</div>
-            
+
             <div id="img-controls" style="display:none">
                 <span class="img-palette-tag">图片主色 (点击修改):</span>
                 <div class="color-grid" id="color-list"></div>
-                
+
                 <div class="tolerance-box">
                     <div class="panel-head">
-                        替换容差 
+                        替换容差
                         <span id="tol-val" style="color:var(--accent)">15%</span>
                     </div>
                     <input type="range" id="toleranceRange" class="tolerance-range" min="0.01" max="0.6" step="0.01" value="0.15">
@@ -300,12 +351,12 @@
                     </div>
                 </div>
             </div>
-            
+
             <div id="vec-controls" style="display:none">
                 <div class="color-grid" id="vec-list"></div>
             </div>
         </div>
-        
+
         <div class="panel-card">
             <div class="panel-head">智能辅助</div>
             <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -321,12 +372,15 @@
 
     <script>
         // 初始化 Canvas
-        const canvas = new fabric.Canvas('c', { 
-            width: 800, height: 800, preserveObjectStacking: true, backgroundColor: null,
+        const DEFAULT_CANVAS_SIZE = { width: 800, height: 800 };
+        const MAX_CANVAS_SIZE = 4096;
+        const canvas = new fabric.Canvas('c', {
+            width: DEFAULT_CANVAS_SIZE.width, height: DEFAULT_CANVAS_SIZE.height, preserveObjectStacking: true, backgroundColor: null,
             selectionColor: 'rgba(55, 148, 255, 0.3)', selectionBorderColor: '#3794ff', selectionLineWidth: 2, selectionDashArray: [5, 5]
         });
-        
+
         let isGridActive = false;
+        let toastTimer = null;
         let gridGroup = null;
 
         // --- 模块 1: 历史记录管理器 (HistoryManager) ---
@@ -345,15 +399,15 @@
 
             save() {
                 if (this.locked) return;
-                
+
                 const newState = JSON.stringify(this.canvas.toJSON(this.saveProps));
-                
+
                 // 去重优化：如果状态未变，不保存（解决无效点击产生的历史）
                 if (newState === this.currentState) return;
 
                 if (this.undoStack.length >= this.maxHistory) this.undoStack.shift();
                 this.undoStack.push(this.currentState);
-                
+
                 this.currentState = newState;
                 this.redoStack = []; // 清空重做栈
             }
@@ -367,7 +421,7 @@
                 this.redoStack.push(this.currentState);
                 const prevState = this.undoStack.pop();
                 this.currentState = prevState;
-                
+
                 this.loadState(prevState);
             }
 
@@ -380,7 +434,7 @@
                 this.undoStack.push(this.currentState);
                 const nextState = this.redoStack.pop();
                 this.currentState = nextState;
-                
+
                 this.loadState(nextState);
             }
 
@@ -388,32 +442,43 @@
                 this.canvas.loadFromJSON(json, () => {
                     this.canvas.renderAll();
                     this.locked = false;
-                    
-                    // 恢复后必须更新 UI 状态
-                    updateStatus();
-                    updateProps();
-                    
-                    // 重建网格（因为 loadFromJSON 会清空画布）
+                    updateCanvasUI();
                     if (isGridActive) drawGrid();
                 });
             }
+
+            reset() {
+                this.undoStack = [];
+                this.redoStack = [];
+                this.currentState = JSON.stringify(this.canvas.toJSON(this.saveProps));
+                this.locked = false;
+            }
         }
-        
+
         const historyManager = new HistoryManager(canvas);
 
         // 监听画布事件并挂钩到 HistoryManager
-        canvas.on('object:added', (e) => { 
-            document.getElementById('canvasHint').style.display = 'none'; 
+        const isUserObject = (object) => object && !object.isGrid && !object.excludeFromExport;
+        const getUserObjects = () => canvas.getObjects().filter(isUserObject);
+
+        function updateCanvasUI() {
             updateStatus();
-            if (e.target && !e.target.isGrid && !e.target.excludeFromExport) {
-                historyManager.save();
-            }
+            updateProps();
+            document.getElementById('canvasHint').style.display = getUserObjects().length ? 'none' : 'block';
+            document.getElementById('canvasSize').textContent = `${canvas.width}×${canvas.height}px`;
+            document.getElementById('canvasW').value = canvas.width;
+            document.getElementById('canvasH').value = canvas.height;
+        }
+
+        canvas.on('object:added', (e) => {
+            updateCanvasUI();
+            if (isUserObject(e.target)) historyManager.save();
         });
-        canvas.on('object:modified', () => historyManager.save());
-        canvas.on('object:removed', () => historyManager.save());
-        canvas.on('selection:cleared', updateStatus);
-        canvas.on('selection:created', updateStatus);
-        canvas.on('selection:updated', updateStatus);
+        canvas.on('object:modified', () => { historyManager.save(); updateCanvasUI(); });
+        canvas.on('object:removed', (e) => { if (isUserObject(e.target)) historyManager.save(); updateCanvasUI(); });
+        canvas.on('selection:cleared', updateCanvasUI);
+        canvas.on('selection:created', updateCanvasUI);
+        canvas.on('selection:updated', updateCanvasUI);
 
 
         // --- 模块 2: 辅助线与吸附逻辑 (用户自定义增强版) ---
@@ -433,10 +498,10 @@
         // 创建辅助线
         function createGuide(x, y, isVertical, options = {}) {
             const { dashed = false, color = CANVAS_GUIDE_COLOR } = options;
-            const coords = isVertical 
-                ? [x, 0, x, canvas.height] 
+            const coords = isVertical
+                ? [x, 0, x, canvas.height]
                 : [0, y, canvas.width, y];
-            
+
             const line = new fabric.Line(coords, {
                 stroke: color,
                 strokeWidth: dashed ? 1 : 1.5,
@@ -447,25 +512,25 @@
                 excludeFromExport: true,
                 objectCaching: false
             });
-            
+
             canvas.add(line);
             guides.push(line);
         }
 
         canvas.on('object:moving', (e) => {
             if (!snapEnabled) return;
-            
+
             const target = e.target;
             clearGuides();
-            
+
             const canvasCenter = {
                 x: canvas.width / 2,
                 y: canvas.height / 2
             };
-            
+
             // 获取目标对象的原始位置
             const targetBounds = target.getBoundingRect(false, true);
-            
+
             const targetPoints = {
                 left: targetBounds.left,
                 right: targetBounds.left + targetBounds.width,
@@ -474,27 +539,27 @@
                 centerX: targetBounds.left + targetBounds.width / 2,
                 centerY: targetBounds.top + targetBounds.height / 2
             };
-            
+
             let snapOffsetX = 0;
             let snapOffsetY = 0;
             let snappedXType = null; // 'canvas-center', 'object-center', 'object-edge'
             let snappedYType = null;
             let alignedObjCenterX = null; // 对齐对象的中心X
             let alignedObjCenterY = null; // 对齐对象的中心Y
-            
+
             // 1. 检测X轴对齐
             // 画布中心
             if (Math.abs(targetPoints.centerX - canvasCenter.x) < SNAP_THRESHOLD) {
                 snapOffsetX = canvasCenter.x - targetPoints.centerX;
                 snappedXType = 'canvas-center';
             }
-            
+
             // 对象间对齐
             if (!snappedXType) {
-                const objects = canvas.getObjects().filter(obj => 
+                const objects = canvas.getObjects().filter(obj =>
                     obj !== target && !obj.isGrid && !obj.excludeFromExport
                 );
-                
+
                 for (const obj of objects) {
                     const objBounds = obj.getBoundingRect(false, true);
                     const objPoints = {
@@ -502,7 +567,7 @@
                         right: objBounds.left + objBounds.width,
                         centerX: objBounds.left + objBounds.width / 2
                     };
-                    
+
                     // 中心对齐
                     if (Math.abs(targetPoints.centerX - objPoints.centerX) < SNAP_THRESHOLD) {
                         snapOffsetX = objPoints.centerX - targetPoints.centerX;
@@ -524,20 +589,20 @@
                     }
                 }
             }
-            
+
             // 2. 检测Y轴对齐
             // 画布中心
             if (Math.abs(targetPoints.centerY - canvasCenter.y) < SNAP_THRESHOLD) {
                 snapOffsetY = canvasCenter.y - targetPoints.centerY;
                 snappedYType = 'canvas-center';
             }
-            
+
             // 对象间对齐
             if (!snappedYType) {
-                const objects = canvas.getObjects().filter(obj => 
+                const objects = canvas.getObjects().filter(obj =>
                     obj !== target && !obj.isGrid && !obj.excludeFromExport
                 );
-                
+
                 for (const obj of objects) {
                     const objBounds = obj.getBoundingRect(false, true);
                     const objPoints = {
@@ -545,7 +610,7 @@
                         bottom: objBounds.top + objBounds.height,
                         centerY: objBounds.top + objBounds.height / 2
                     };
-                    
+
                     // 中心对齐
                     if (Math.abs(targetPoints.centerY - objPoints.centerY) < SNAP_THRESHOLD) {
                         snapOffsetY = objPoints.centerY - targetPoints.centerY;
@@ -567,7 +632,7 @@
                     }
                 }
             }
-            
+
             // 应用吸附偏移
             if (snappedXType || snappedYType) {
                 target.set({
@@ -576,7 +641,7 @@
                 });
                 target.setCoords();
             }
-            
+
             // 3. 绘制辅助线
             if (guidesVisible) {
                 // 重新计算吸附后的位置
@@ -589,93 +654,93 @@
                     centerX: finalBounds.left + finalBounds.width / 2,
                     centerY: finalBounds.top + finalBounds.height / 2
                 };
-                
+
                 // 判断是否显示中心十字线
                 const showObjectCenterCross = snappedXType === 'object-center' && snappedYType === 'object-center';
                 const showCanvasCenterCross = snappedXType === 'canvas-center' && snappedYType === 'canvas-center';
-                
+
                 // 情况1: 与对象中心完全对齐（X和Y都与对象中心对齐）
                 if (showObjectCenterCross) {
-                    createGuide(finalPoints.centerX, 0, true, { 
-                        dashed: true, 
-                        color: OBJECT_GUIDE_COLOR 
+                    createGuide(finalPoints.centerX, 0, true, {
+                        dashed: true,
+                        color: OBJECT_GUIDE_COLOR
                     });
-                    
-                    createGuide(0, finalPoints.centerY, false, { 
-                        dashed: true, 
-                        color: OBJECT_GUIDE_COLOR 
+
+                    createGuide(0, finalPoints.centerY, false, {
+                        dashed: true,
+                        color: OBJECT_GUIDE_COLOR
                     });
                 }
                 // 情况2: 与画布中心完全对齐
                 else if (showCanvasCenterCross) {
-                    createGuide(finalPoints.centerX, 0, true, { 
-                        dashed: false, 
-                        color: CANVAS_GUIDE_COLOR 
+                    createGuide(finalPoints.centerX, 0, true, {
+                        dashed: false,
+                        color: CANVAS_GUIDE_COLOR
                     });
-                    
-                    createGuide(0, finalPoints.centerY, false, { 
-                        dashed: false, 
-                        color: CANVAS_GUIDE_COLOR 
+
+                    createGuide(0, finalPoints.centerY, false, {
+                        dashed: false,
+                        color: CANVAS_GUIDE_COLOR
                     });
                 }
                 // 情况3: 其他情况显示3条辅助线
                 else {
                     // 垂直辅助线（左、中、右）
-                    createGuide(finalPoints.left, 0, true, { 
-                        dashed: true, 
-                        color: OBJECT_GUIDE_COLOR 
+                    createGuide(finalPoints.left, 0, true, {
+                        dashed: true,
+                        color: OBJECT_GUIDE_COLOR
                     });
-                    
+
                     // 中线特殊处理
                     if (snappedXType === 'canvas-center') {
-                        createGuide(finalPoints.centerX, 0, true, { 
+                        createGuide(finalPoints.centerX, 0, true, {
                             dashed: false,
                             color: CANVAS_GUIDE_COLOR
                         });
                     } else if (snappedXType === 'object-center') {
-                        createGuide(finalPoints.centerX, 0, true, { 
+                        createGuide(finalPoints.centerX, 0, true, {
                             dashed: true,
                             color: OBJECT_GUIDE_COLOR
                         });
                     } else {
-                        createGuide(finalPoints.centerX, 0, true, { 
-                            dashed: true, 
-                            color: OBJECT_GUIDE_COLOR 
+                        createGuide(finalPoints.centerX, 0, true, {
+                            dashed: true,
+                            color: OBJECT_GUIDE_COLOR
                         });
                     }
-                    
-                    createGuide(finalPoints.right, 0, true, { 
-                        dashed: true, 
-                        color: OBJECT_GUIDE_COLOR 
+
+                    createGuide(finalPoints.right, 0, true, {
+                        dashed: true,
+                        color: OBJECT_GUIDE_COLOR
                     });
-                    
+
                     // 水平辅助线（上、中、下）
-                    createGuide(0, finalPoints.top, false, { 
-                        dashed: true, 
-                        color: OBJECT_GUIDE_COLOR 
+                    createGuide(0, finalPoints.top, false, {
+                        dashed: true,
+                        color: OBJECT_GUIDE_COLOR
                     });
-                    
+
                     // 中线特殊处理
                     if (snappedYType === 'canvas-center') {
-                        createGuide(0, finalPoints.centerY, false, { 
+                        createGuide(0, finalPoints.centerY, false, {
                             dashed: false,
                             color: CANVAS_GUIDE_COLOR
                         });
                     } else if (snappedYType === 'object-center') {
-                        createGuide(0, finalPoints.centerY, false, { 
+                        createGuide(0, finalPoints.centerY, false, {
                             dashed: true,
                             color: OBJECT_GUIDE_COLOR
                         });
                     } else {
-                        createGuide(0, finalPoints.centerY, false, { 
-                            dashed: true, 
-                            color: OBJECT_GUIDE_COLOR 
+                        createGuide(0, finalPoints.centerY, false, {
+                            dashed: true,
+                            color: OBJECT_GUIDE_COLOR
                         });
                     }
-                    
-                    createGuide(0, finalPoints.bottom, false, { 
-                        dashed: true, 
-                        color: OBJECT_GUIDE_COLOR 
+
+                    createGuide(0, finalPoints.bottom, false, {
+                        dashed: true,
+                        color: OBJECT_GUIDE_COLOR
                     });
                 }
             }
@@ -721,7 +786,7 @@
                 else label = '文本';
             }
             document.getElementById('selectedObj').textContent = label;
-            document.getElementById('objCount').textContent = canvas.getObjects().filter(o => !o.isGrid && !o.excludeFromExport).length;
+            document.getElementById('objCount').textContent = getUserObjects().length;
         }
 
         function toggleGrid() {
@@ -755,7 +820,7 @@
         function exportContent(type) {
             const objects = canvas.getObjects().filter(o => !o.isGrid && !o.excludeFromExport);
             if(objects.length === 0) { showToast('画布为空，无法导出'); return; }
-            canvas.discardActiveObject(); 
+            canvas.discardActiveObject();
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             objects.forEach(o => {
                 const r = o.getBoundingRect(true, true);
@@ -798,15 +863,20 @@
             showToast(`已导出 ${type.toUpperCase()}`);
         }
         function downloadFile(url, name) {
-            const a = document.createElement('a'); a.href = url; a.download = name;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = name;
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+            if (url.startsWith('blob:')) window.setTimeout(() => URL.revokeObjectURL(url), 1500);
         }
 
         function act(k) {
             const o = canvas.getActiveObject();
             if(k === 'savePng') return exportContent('png');
             if(k === 'saveSvg') return exportContent('svg');
-            if(!o && k !== 'save') return;
+            if(!o && k !== 'save') { showToast('请先选择对象'); return; }
             if(k === 'del') {
                 const objs = canvas.getActiveObjects();
                 if(objs.length) {
@@ -861,8 +931,8 @@
                 for (var i = 0; i < len; i += 4) {
                     var r = data[i], g = data[i+1], b = data[i+2];
                     var dist = Math.sqrt(Math.pow(r - s[0], 2) + Math.pow(g - s[1], 2) + Math.pow(b - s[2], 2));
-                    if (dist < threshold) { 
-                        data[i] = t[0]; data[i+1] = t[1]; data[i+2] = t[2]; 
+                    if (dist < threshold) {
+                        data[i] = t[0]; data[i+1] = t[1]; data[i+2] = t[2];
                     }
                 }
             },
@@ -894,20 +964,20 @@
                 const c = document.createElement('canvas');
                 const ctx = c.getContext('2d');
                 // 性能优化：限制取样大小
-                const maxDimension = 200; 
+                const maxDimension = 200;
                 const scale = Math.min(1, maxDimension / Math.max(imageElement.width, imageElement.height));
-                const w = Math.floor(imageElement.width * scale); 
+                const w = Math.floor(imageElement.width * scale);
                 const h = Math.floor(imageElement.height * scale);
                 c.width = w; c.height = h;
                 ctx.drawImage(imageElement, 0, 0, w, h);
-                const data = ctx.getImageData(0, 0, w, h).data; 
-                
-                const clusters = []; 
-                const clusterThreshold = 60; 
-                const step = 16; 
+                const data = ctx.getImageData(0, 0, w, h).data;
+
+                const clusters = [];
+                const clusterThreshold = 60;
+                const step = 16;
                 for (let i = 0; i < data.length; i += step * 4) {
                     const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
-                    if (a < 230) continue; 
+                    if (a < 230) continue;
                     let foundCluster = false;
                     for (let j = 0; j < clusters.length; j++) {
                         const cluster = clusters[j];
@@ -938,25 +1008,26 @@
             const box = document.getElementById('color-box');
             const imgControls = document.getElementById('img-controls');
             const vecControls = document.getElementById('vec-controls');
-            
-            if(!act) { 
-                box.style.display='none'; 
-                document.getElementById('inpW').value=''; 
-                document.getElementById('inpH').value=''; 
-                return; 
+
+            if(!act) {
+                box.style.display='none';
+                document.getElementById('inpW').value='';
+                document.getElementById('inpH').value='';
+                return;
             }
-            
+
             box.style.display='block';
             document.getElementById('inpW').value = Math.round(act.getScaledWidth());
             document.getElementById('inpH').value = Math.round(act.getScaledHeight());
-            document.querySelector('input[type=range]').value = act.opacity;
-            
+            document.getElementById('opacityRange').value = act.opacity;
+            document.getElementById('op-val').textContent = Math.round(act.opacity * 100) + '%';
+
             if (act.type === 'image') {
                 imgControls.style.display = 'block';
                 vecControls.style.display = 'none';
                 const list = document.getElementById('color-list');
                 list.innerHTML = '';
-                
+
                 const colors = extractDominantColors(act.getElement());
                 if (colors.length === 0) {
                     list.innerHTML = '<div style="font-size:12px;color:#666;grid-column:span 5;text-align:center;">无法提取颜色<br>(受跨域限制)</div>';
@@ -967,7 +1038,7 @@
                     const input = document.createElement('input'); input.type = 'color';
                     const rgb = rgbStr.match(/\d+/g).map(Number);
                     input.value = '#' + ((1 << 24) + (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]).toString(16).slice(1);
-                    
+
                     input.addEventListener('input', (e) => {
                         const newHex = e.target.value;
                         const newRgb = new fabric.Color(newHex).getSource();
@@ -988,11 +1059,11 @@
                         act.applyFilters(); act.dirty = true; canvas.requestRenderAll();
                         d.style.background = `linear-gradient(0deg, ${newHex}, ${newHex}), url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=')`;
                     });
-                    
+
                     input.addEventListener('change', () => historyManager.save()); // 拖拽结束才保存
                     d.appendChild(input); list.appendChild(d);
                 });
-                
+
                 const range = document.getElementById('toleranceRange');
                 range.oninput = function() {
                     document.getElementById('tol-val').textContent = Math.round(this.value * 100) + '%';
@@ -1011,7 +1082,7 @@
                 list.innerHTML = '';
                 const colors = new Set();
                 const isValidColor = (c) => c && c!=='none' && c!=='transparent' && !c.replace(/\s/g, '').endsWith(',0)');
-                
+
                 function collect(o) {
                     if (o.visible === false || o.opacity === 0) return;
                     if(isValidColor(o.fill)) colors.add(o.fill);
@@ -1019,17 +1090,17 @@
                     if(o.getObjects) o.getObjects().forEach(collect);
                 }
                 collect(act);
-                
+
                 colors.forEach(c => {
                     const d = document.createElement('div'); d.className='c-dot'; d.style.background = c;
-                    const i = document.createElement('input'); i.type='color'; 
+                    const i = document.createElement('input'); i.type='color';
                     try { i.value = new fabric.Color(c).toHex() ? '#'+new fabric.Color(c).toHex() : '#000000'; } catch(e){}
-                    
+
                     let currentColor = c; // 闭包变量，保持当前正在修改的颜色状态
 
                     i.oninput = (e) => {
-                        const nv = e.target.value; 
-                        d.style.background = nv; 
+                        const nv = e.target.value;
+                        d.style.background = nv;
                         let updated = false;
                         const apply = (o) => {
                             if(o.fill === currentColor) { o.set('fill', nv); updated = true; }
@@ -1045,10 +1116,8 @@
                 });
             }
         }
-        
+
         canvas.on('object:scaling', updateProps);
-        canvas.on('selection:created', updateProps);
-        canvas.on('selection:updated', updateProps);
 
         // --- 静态数据 ---
         const pathDB = {
@@ -1057,16 +1126,16 @@
             food: ["M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v16h2.5V6c0-1.31.94-2.5 2.25-2.5S23 4.69 23 6v16h1V6c0-1.86-1.28-3.41-3-3.86V2h-2v.14c-1.72.45-3 2-3 3.86z", "M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z", "M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z","M18 13v5.5c0 .83-.67 1.5-1.5 1.5h-9c-.83 0-1.5-.67-1.5-1.5V13c-1.1 0-2-.9-2-2v-2c0-1.1.9-2 2-2V6c0-2.21 1.79-4 4-4s4 1.79 4 4v1c1.1 0 2 .9 2 2v2c0 1.1-.9 2-2 2z","M2 17h20v2H2zM4 8h16v7H4z","M21 5V3H3v2l8 9v5H6v2h12v-2h-5v-5l8-9zM7.43 5L12 10.59 16.57 5H7.43z", "M12 2C8.43 2 5.23 3.54 3.01 6L12 22l8.99-16C18.78 3.55 15.57 2 12 2zm-1 14h-2v-2h2v2zm0-4h-2V8h2v4z", "M17 10c.1 0 .19.01.28.01.94-1.98.54-4.4-1.12-5.96C14.77 2.62 12.87 2 11.05 2 7.02 2 3.65 4.96 3.06 8.87 2.38 8.46 1.7 8.16 1.02 8.01c-.05 1.95 1.05 3.73 2.76 4.75-.15 3.08 1.48 6.07 4.3 7.82L12 22l3.92-1.42c2.82-1.75 4.45-4.74 4.3-7.82 1.71-1.02 2.81-2.8 2.76-4.75-.68.15-1.36.45-2.04.86-.59-3.91-3.96-6.87-7.99-6.87-1.82 0-3.72.62-5.11 2.05-1.66 1.56-2.06 3.98-1.12 5.96.09 0 .18-.01.28-.01.95 0 1.83.25 2.58.68.75.43 1.34 1.05 1.68 1.78.34-.73.93-1.35 1.68-1.78.75-.43 1.63-.68 2.58-.68z", "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5.5-2.5l7.51-3.22-7.52-3.22L6.5 14l5.5 3.5z","M8.1 13.34l2.83-2.83L3.91 3.5c-1.56 1.56-1.56 4.09 0 5.66l4.19 4.18zm6.78-1.81c1.53.71 3.68.21 5.27-1.38 1.91-1.91 2.28-4.65.81-6.12-1.46-1.46-4.2-1.1-6.12.81-1.59 1.59-2.09 3.74-1.38 5.27L3.7 19.87l1.41 1.41L12 14.41l6.88 6.88 1.41-1.41L13.41 13l1.47-1.47z", "M12 6c3.87 0 7 3.13 7 7 0 1.25-.34 2.42-.93 3.42l-1.43-1.43c.22-.61.36-1.27.36-1.99 0-2.76-2.24-5-5-5s-5 2.24-5 5c0 .72.14 1.38.36 1.99l-1.43 1.43C5.34 15.42 5 14.25 5 13c0-3.87 3.13-7 7-7z", "M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z","M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z","M2 17h20v2H2zM4 8h16v7H4z", "M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z","M17 16h2V4H9v2h8v10zm0 2v3c0 .55-.45 1-1 1H5c-.55 0-1-.45-1-1v-3c0-.55.45-1 1-1h1l-1-2h2l1 2h2l1-2h2l1 2h1c.55 0 1 .45 1 1zm-2 0h-2v1h2v-1zm-4 0H9v1h2v-1z", "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z","M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z","M5 19h14v2H5zM5 13h14v2H5zM5 7h14v2H5z","M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM12 8c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z","M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z","M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z", "M7 2v11h3v9l7-12h-4l4-8z", "M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-7-4c0-4.42 3.58-8 8-8 .88 0 1.73.15 2.54.41C11.56 12.3 8.3 15.56 8.41 19.54 6.41 18.73 5 16.8 5 16z","M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z","M18.5 4L19 2H5l.5 2h13zm-1.86 16H7.36l-1.3-14h11.88l-1.3 14z"],
             creative: ["M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z", "M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z", "M7 19h10V4H7v15zm-5-2h4v6H2v-6zM18 6v11h4V6h-4z", "M9 3L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-3.17L15 3H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z", "M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zm-10-7h9v6h-9z", "M17 15.93c-2.48-.36-4.93-1.43-6.96-3.17L14.7 9.8c.84-.71 2.05-.62 2.76.19l.01.01c.73.84.66 2.11-.19 2.85l-.26.23c1.55.93 2.11 2.29 1.98 2.85zm-4.32-7.29l1.62-1.42c.79-.69.7-1.92-.19-2.73l-.01-.01c-.69-.79-1.9-.7-2.67.14l-2.02 2.22c2.03 1.04 3.27 1.8 3.27 1.8zM22 2l-4.5 5.5-2.5-3L22 2zM9.5 14c-4.14 0-7.5 3.36-7.5 7.5h2c0-3.04 2.46-5.5 5.5-5.5 3.04 0 5.5 2.46 5.5 5.5h2c0-4.14-3.36-7.5-7.5-7.5z", "M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z", "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z","M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z", "M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z", "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z","M20.41 4.94l-1.35-1.35c-.78-.78-2.05-.78-2.83 0L13.4 6.41 3 16.82V21h4.18l10.46-10.46 2.77-2.77c.79-.78.79-2.05 0-2.83zm-14 14.12L5 19v-1.41l8.66-8.66 1.41 1.41L6.41 19.06z","M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z","M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z", "M19 13H5v-2h14v2z","M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z","M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z","M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z","M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z","M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z","M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z","M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z","M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3 3z","M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z","M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z","M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8z","M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z","M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"],
             trad: ["M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-4-8c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4zm2 0c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z", "M12 2C6.47 2 2 12 2 12s4.47 10 10 10 10-10 10-10S17.53 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0 0 1.5-2.5 8-2.5s8 2.5 8 2.5c0 4.41-3.59 8-8 8z", "M12 2C9 2 7 4 7 7v10c0 3 2 5 5 5s5-2 5-5V7c0-3-2-5-5-5zm0 18c-1.66 0-3-1.34-3-3V7c0-1.66 1.34-3 3-3s3 1.34 3 3v10c0 1.66-1.34 3-3 3z", "M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z", "M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z", "M20 2H4v2h16V2zm-2 4H6l-2 12h16l-2-12zm-8 6h4v2h-4v-2z", "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3 1.34-3 3 1.34 3 3 3zm6 9H6v-.57c0-.81.48-1.53 1.22-1.85 1.52-.66 3.16-1.03 4.78-1.03 1.62 0 3.26.37 4.78 1.03.74.32 1.22 1.04 1.22 1.85V15z", "M12 2l-5.5 9h11z", "M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z", "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 2c1.66 0 3 1.34 3 3s-1.34 3-3 3c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3zm0 14c-1.66 0-3-1.34-3-3s1.34-3 3-3c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3z", "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z", "M12 6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2m0 10c2.7 0 5.8 1.29 6 2H6c.23-.72 3.31-2 6-2m0-12C9.79 4 8 5.79 8 8s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z", "M13 3.03V1h-2v2.03C6.37 3.5 3 7.58 3 12c0 2.42 1.02 4.77 2.9 6.34l1.37-1.44C5.9 15.68 5 13.92 5 12c0-3.35 2.5-6.18 5.75-6.46L11 8l4-3.5L11 1v4.54C7.75 5.82 5 8.65 5 12h2c0-2.28 1.54-4.22 3.66-4.83L11.72 8l4.28-3.75-4.28-3.75V3.03z", "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z", "M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z", "M19 19H5V5h14v14zM5 3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2H5z", "M23 7V1h-6v2H7V1H1v6h2v10H1v6h6v-2h10v2h6v-6h-2V7h2zM3 3h2v2H3V3zm2 18H3v-2h2v2zm12-2H7v-2H5V7h2V5h10v2h2v10h-2v2zm4 2h-2v-2h2v2zM21 5h-2V3h2v2z", "M12 2L2 22h20L12 2z", "M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z", "M22 3.41L16.71 8.7 18.29 7.11 22 10.83 5.17 22H2V18.83L18.83 2 22 5.17l-1.41 1.41z"],
-           
+
         //新增图标
-            custom: ["M420.31378 522.795643c-0.102328-5.423404-4.195463-9.721195-8.390926-10.846807-4.297792-1.023284-8.288598 0.511642-10.130509 2.762866-3.479165 4.195463-2.148896 7.572299-2.148895 7.981613 0.204657-0.306985 1.22794-3.479165 4.502448-4.809434 3.683821-1.637254 8.083941 1.023284 8.186269 4.911762-0.102328 3.888478-4.502448 6.549016-8.186269 4.911762-3.376836-1.330269-4.297792-4.604777-4.502448-4.809434 0 0.511642-1.432597 3.78615 2.148895 7.981613 1.841911 2.353553 5.832717 3.78615 10.130509 2.762866 4.195463-1.22794 8.18627-5.423404 8.390926-10.846807zM427.067453 533.130808c-4.297792-1.023284-8.288598 0.511642-10.130509 2.762866-3.479165 4.195463-2.148896 7.572299-2.148896 7.981613 0.204657-0.306985 1.22794-3.479165 4.502449-4.809433 3.683821-1.637254 8.083941 1.023284 8.186269 4.911762-0.102328 3.888478-4.502448 6.549016-8.186269 4.911761-3.376836-1.330269-4.297792-4.604777-4.502449-4.809433 0 0 0-0.102328-0.102328-0.102328l0.102328 0.102328c0 0.409313-1.432597 3.78615 2.148896 7.981613 1.841911 2.353553 5.832717 3.78615 10.130509 2.762866 4.195463-1.125612 8.18627-5.321075 8.390926-10.846807-0.204657-5.423404-4.195463-9.721195-8.390926-10.846808zM354.41431 438.784051c18.112122 5.01409 29.265914 17.088838 36.735885 27.01469 10.232837 14.325972 14.223643 26.298391 15.860897 32.335765 4.297792-2.148896 8.595583-4.195463 12.893375-6.139702-0.920955-5.525732-11.256121-33.666034-38.782452-55.25732-14.939942-11.767763-31.312481-18.623763-43.898871-19.442391-7.060658-0.61397-12.688718-0.204657-16.167883 0.306986 0.204657 0.716299 0.306985 1.534926 0.409314 2.251224 1.841911 9.823524-1.739582 23.944839-14.4283 30.186869-12.381733 7.162986-30.289198-0.920955-36.633557-12.995703-1.739582-2.455881-3.069851-5.116419-4.195463-7.981613-4.707105 1.841911-11.767763 5.01409-18.21445 10.232837-7.469971 6.037374-11.870091 13.712002-14.121315 17.907465 0.306985 0.306985 0.511642 0.716299 0.818627 1.023283 4.195463 4.604777 6.856001 11.256121 7.572299 18.316779 5.423404-6.549016 14.121315-12.893375 24.865794-16.372539 18.82842-5.832717 35.303288-4.093135 43.898871-2.55821 2.967523-6.139702 7.469971-11.563106 13.302688-15.349255 10.02818-5.935045 21.591286-5.832717 30.084541-3.479165zM414.788048 543.977616z"], 
+            custom: ["M420.31378 522.795643c-0.102328-5.423404-4.195463-9.721195-8.390926-10.846807-4.297792-1.023284-8.288598 0.511642-10.130509 2.762866-3.479165 4.195463-2.148896 7.572299-2.148895 7.981613 0.204657-0.306985 1.22794-3.479165 4.502448-4.809434 3.683821-1.637254 8.083941 1.023284 8.186269 4.911762-0.102328 3.888478-4.502448 6.549016-8.186269 4.911762-3.376836-1.330269-4.297792-4.604777-4.502448-4.809434 0 0.511642-1.432597 3.78615 2.148895 7.981613 1.841911 2.353553 5.832717 3.78615 10.130509 2.762866 4.195463-1.22794 8.18627-5.423404 8.390926-10.846807zM427.067453 533.130808c-4.297792-1.023284-8.288598 0.511642-10.130509 2.762866-3.479165 4.195463-2.148896 7.572299-2.148896 7.981613 0.204657-0.306985 1.22794-3.479165 4.502449-4.809433 3.683821-1.637254 8.083941 1.023284 8.186269 4.911762-0.102328 3.888478-4.502448 6.549016-8.186269 4.911761-3.376836-1.330269-4.297792-4.604777-4.502449-4.809433 0 0 0-0.102328-0.102328-0.102328l0.102328 0.102328c0 0.409313-1.432597 3.78615 2.148896 7.981613 1.841911 2.353553 5.832717 3.78615 10.130509 2.762866 4.195463-1.125612 8.18627-5.321075 8.390926-10.846807-0.204657-5.423404-4.195463-9.721195-8.390926-10.846808zM354.41431 438.784051c18.112122 5.01409 29.265914 17.088838 36.735885 27.01469 10.232837 14.325972 14.223643 26.298391 15.860897 32.335765 4.297792-2.148896 8.595583-4.195463 12.893375-6.139702-0.920955-5.525732-11.256121-33.666034-38.782452-55.25732-14.939942-11.767763-31.312481-18.623763-43.898871-19.442391-7.060658-0.61397-12.688718-0.204657-16.167883 0.306986 0.204657 0.716299 0.306985 1.534926 0.409314 2.251224 1.841911 9.823524-1.739582 23.944839-14.4283 30.186869-12.381733 7.162986-30.289198-0.920955-36.633557-12.995703-1.739582-2.455881-3.069851-5.116419-4.195463-7.981613-4.707105 1.841911-11.767763 5.01409-18.21445 10.232837-7.469971 6.037374-11.870091 13.712002-14.121315 17.907465 0.306985 0.306985 0.511642 0.716299 0.818627 1.023283 4.195463 4.604777 6.856001 11.256121 7.572299 18.316779 5.423404-6.549016 14.121315-12.893375 24.865794-16.372539 18.82842-5.832717 35.303288-4.093135 43.898871-2.55821 2.967523-6.139702 7.469971-11.563106 13.302688-15.349255 10.02818-5.935045 21.591286-5.832717 30.084541-3.479165zM414.788048 543.977616z"],
            };
-        const categories = { 
-            "基础形状": pathDB.basic, 
-            "医药健康": pathDB.medical, 
-            "餐饮美食": pathDB.food, 
-            "创意设计": pathDB.creative, 
-            "中国传统": pathDB.trad, 
+        const categories = {
+            "基础形状": pathDB.basic,
+            "医药健康": pathDB.medical,
+            "餐饮美食": pathDB.food,
+            "创意设计": pathDB.creative,
+            "中国传统": pathDB.trad,
         //新增路径
             "我的图标": pathDB.custom
         };
@@ -1080,10 +1149,10 @@
                 header.innerHTML = `<span>${key}</span> <i class="fas fa-chevron-down"></i>`;
                 const content = document.createElement('div'); content.className = 'accordion-content';
                 const grid = document.createElement('div'); grid.className = 'assets-grid';
-                
+
                 categories[key].forEach(d => {
                     const el = document.createElement('div'); el.className = 'asset-item';
-                    
+
                     // --- 修改开始：针对不同图标使用不同的视口大小 ---
                     let viewBoxSet = "0 0 24 24"; // 默认小图标
                     if (key === "我的图标") {
@@ -1094,7 +1163,7 @@
 
                     el.onclick = () => addPath(d); grid.appendChild(el);
                 });
-                
+
                 content.appendChild(grid); item.appendChild(header); item.appendChild(content); container.appendChild(item);
                 header.onclick = () => {
                     const isOpen = content.classList.contains('show');
@@ -1105,7 +1174,7 @@
                 if(index === 0) { content.classList.add('show'); header.classList.add('active'); }
             });
         }
-        
+
         function addText() {
             const txt = document.getElementById('txtInput').value || '双击编辑';
             const size = parseInt(document.getElementById('txtSize').value) || 40;
@@ -1120,19 +1189,19 @@
         function addPath(d) {
             const path = new fabric.Path(d);
             // 移除 scaleX: 3, scaleY: 3，改用通用配置
-            path.set({ 
-                fill: '#3794ff', 
-                left: canvas.width/2, 
-                top: canvas.height/2, 
-                originX: 'center', 
-                originY: 'center' 
+            path.set({
+                fill: '#3794ff',
+                left: canvas.width/2,
+                top: canvas.height/2,
+                originX: 'center',
+                originY: 'center'
             });
-            
+
             // 智能缩放：无论原始图标多大，都统一缩放到 200像素 宽
             path.scaleToWidth(200);
-            
-            canvas.add(path); 
-            canvas.setActiveObject(path); 
+
+            canvas.add(path);
+            canvas.setActiveObject(path);
             historyManager.save();
         }
         function toggleStyle(btn) { btn.classList.toggle('active'); }
@@ -1148,62 +1217,202 @@
             if(p=='middle') o.centerV();
             o.setCoords(); historyManager.save(); canvas.requestRenderAll();
         }
-        function setSize(type, val) {
-            const act = canvas.getActiveObject(); if(!act) return;
-            if(type=='w') act.scaleToWidth(parseInt(val));
-            if(type=='h') act.scaleToHeight(parseInt(val));
-            historyManager.save(); canvas.requestRenderAll();
+        function setSize(type, value) {
+            const object = canvas.getActiveObject();
+            const next = Number(value);
+            if (!object) return showToast('请先选择对象');
+            if (!Number.isFinite(next) || next <= 0) { updateProps(); return showToast('尺寸必须是大于 0 的数字'); }
+            const current = type === 'w' ? object.getScaledWidth() : object.getScaledHeight();
+            const keepRatio = document.getElementById('lockRatio').checked;
+            if (keepRatio) {
+                const factor = next / current;
+                object.set({ scaleX: object.scaleX * factor, scaleY: object.scaleY * factor });
+            } else if (type === 'w') {
+                object.scaleToWidth(next);
+            } else {
+                object.scaleToHeight(next);
+            }
+            object.setCoords();
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateProps();
         }
-        function setOpacity(v) { 
-            const o = canvas.getActiveObject(); 
-            if(o) { 
-                o.set('opacity', parseFloat(v)); 
-                document.getElementById('op-val').textContent = Math.round(v*100)+'%'; 
-                canvas.requestRenderAll(); 
+
+        function setOpacity(value) {
+            const object = canvas.getActiveObject();
+            if (object) {
+                object.set('opacity', Number(value));
+                document.getElementById('op-val').textContent = Math.round(value * 100) + '%';
+                canvas.requestRenderAll();
             }
         }
-        // 透明度拖拽结束时保存历史
-        document.querySelector('input[type=range]').addEventListener('change', () => historyManager.save());
+        document.getElementById('opacityRange').addEventListener('change', () => historyManager.save());
 
-        function showToast(m) { 
-            const t=document.getElementById('toast'); t.textContent=m; t.style.opacity=1; setTimeout(()=>t.style.opacity=0, 2000); 
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            window.clearTimeout(toastTimer);
+            toast.textContent = message;
+            toast.style.opacity = 1;
+            toastTimer = window.setTimeout(() => { toast.style.opacity = 0; }, 2400);
         }
-        
+
         // 更新 UI 事件监听，以匹配新的吸附函数
         document.getElementById('snapToggle').addEventListener('change', function(){ toggleSnap(this.checked); });
         document.getElementById('showGuidesToggle').addEventListener('change', function(){ toggleGuides(this.checked); });
-        
-        document.getElementById('fileIn').onchange = (e) => {
-            const f = e.target.files[0]; if(!f) return;
-            const r = new FileReader();
-            r.onload = (ev) => {
-                const d = ev.target.result;
-                if(f.type.includes('svg') || f.name.toLowerCase().endsWith('.svg')) {
-                    fabric.loadSVGFromURL(d, (obs, ops) => {
-                        const g = fabric.util.groupSVGElements(obs, ops);
-                        g.scaleToWidth(200); canvas.centerObject(g); canvas.add(g); canvas.setActiveObject(g); updateProps(); historyManager.save();
+
+        function applyCanvasSize() {
+            const width = Number(document.getElementById('canvasW').value);
+            const height = Number(document.getElementById('canvasH').value);
+            if (!Number.isInteger(width) || !Number.isInteger(height) || width < 64 || height < 64 || width > MAX_CANVAS_SIZE || height > MAX_CANVAS_SIZE) {
+                return showToast(`画布尺寸需为 64–${MAX_CANVAS_SIZE} px 的整数`);
+            }
+            canvas.setDimensions({ width, height });
+            if (isGridActive) drawGrid();
+            historyManager.reset();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+            showToast(`画布已调整为 ${width}×${height}px`);
+        }
+
+        function newDocument() {
+            if (getUserObjects().length && !window.confirm('新建会清空当前画布。尚未保存的内容将丢失，是否继续？')) return;
+            clearGuides();
+            canvas.clear();
+            canvas.setDimensions(DEFAULT_CANVAS_SIZE);
+            canvas.backgroundColor = null;
+            isGridActive = false;
+            gridGroup = null;
+            document.getElementById('gridToggle').classList.remove('active');
+            historyManager.reset();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+            showToast('已新建空白设计');
+        }
+
+        function saveProject() {
+            const project = {
+                application: 'Graphicon',
+                version: 1,
+                createdAt: new Date().toISOString(),
+                canvas: { width: canvas.width, height: canvas.height, backgroundColor: canvas.backgroundColor || null },
+                gridEnabled: isGridActive,
+                objects: canvas.toJSON(historyManager.saveProps)
+            };
+            const blob = new Blob([JSON.stringify(project)], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            downloadFile(url, `graphicon-project-${Date.now()}.graphicon`);
+            showToast('项目文件已下载');
+        }
+
+        function openProject() {
+            document.getElementById('projectIn').click();
+        }
+
+        function loadProject(project) {
+            if (!project || project.application !== 'Graphicon' || !project.objects) throw new Error('不是有效的 Graphicon 项目文件');
+            const width = Number(project.canvas?.width);
+            const height = Number(project.canvas?.height);
+            if (!Number.isInteger(width) || !Number.isInteger(height) || width < 64 || height < 64 || width > MAX_CANVAS_SIZE || height > MAX_CANVAS_SIZE) {
+                throw new Error('项目中的画布尺寸无效');
+            }
+            clearGuides();
+            isGridActive = false;
+            gridGroup = null;
+            canvas.setDimensions({ width, height });
+            canvas.backgroundColor = project.canvas?.backgroundColor || null;
+            canvas.loadFromJSON(project.objects, () => {
+                isGridActive = Boolean(project.gridEnabled);
+                document.getElementById('gridToggle').classList.toggle('active', isGridActive);
+                if (isGridActive) drawGrid();
+                historyManager.reset();
+                canvas.requestRenderAll();
+                updateCanvasUI();
+                showToast('项目已打开');
+            });
+        }
+
+        function handleAssetFile(file) {
+            if (!file) return;
+            const isSvg = file.type === 'image/svg+xml' || /\.svg$/i.test(file.name);
+            if (!isSvg && !file.type.startsWith('image/')) return showToast('仅支持图片或 SVG 文件');
+            if (file.size > 20 * 1024 * 1024) return showToast('文件过大，请导入不超过 20 MB 的素材');
+            const reader = new FileReader();
+            reader.onerror = () => showToast('文件读取失败，请重试');
+            reader.onload = (event) => {
+                const data = event.target.result;
+                if (isSvg) {
+                    fabric.loadSVGFromURL(data, (objects, options) => {
+                        if (!objects?.length) return showToast('未能解析该 SVG 文件');
+                        const group = fabric.util.groupSVGElements(objects, options);
+                        group.scaleToWidth(Math.min(200, canvas.width * .45));
+                        canvas.centerObject(group);
+                        canvas.add(group);
+                        canvas.setActiveObject(group);
+                        canvas.requestRenderAll();
+                        updateCanvasUI();
                     });
                 } else {
-                    fabric.Image.fromURL(d, (img) => {
-                        img.scaleToWidth(300); canvas.centerObject(img); canvas.add(img); canvas.setActiveObject(img); updateProps(); historyManager.save();
+                    fabric.Image.fromURL(data, (image) => {
+                        if (!image) return showToast('未能读取该图片');
+                        image.scaleToWidth(Math.min(300, canvas.width * .6));
+                        canvas.centerObject(image);
+                        canvas.add(image);
+                        canvas.setActiveObject(image);
+                        canvas.requestRenderAll();
+                        updateCanvasUI();
                     });
                 }
             };
-            r.readAsDataURL(f); e.target.value = '';
-        };
-        
-        document.addEventListener('keydown', e => {
-            if(e.target.tagName === 'INPUT') return;
-            if(e.key === 'Delete' || e.key === 'Backspace') act('del');
-            if((e.ctrlKey || e.metaKey) && e.key === 'c') act('copy');
-            if((e.ctrlKey || e.metaKey) && e.key === 'g') { e.preventDefault(); e.shiftKey ? act('ungroup') : act('group'); }
-            
-            // Undo/Redo
-            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); historyManager.undo(); }
-            if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { e.preventDefault(); historyManager.redo(); }
+            reader.readAsDataURL(file);
+        }
+
+        function setupDropZone() {
+            const workspace = document.querySelector('.workspace');
+            ['dragenter', 'dragover'].forEach(type => workspace.addEventListener(type, event => {
+                event.preventDefault();
+                workspace.classList.add('drag-over');
+            }));
+            workspace.addEventListener('dragleave', event => {
+                if (!workspace.contains(event.relatedTarget)) workspace.classList.remove('drag-over');
+            });
+            workspace.addEventListener('drop', event => {
+                event.preventDefault();
+                workspace.classList.remove('drag-over');
+                handleAssetFile(event.dataTransfer.files?.[0]);
+            });
+        }
+
+        document.getElementById('fileIn').addEventListener('change', event => {
+            handleAssetFile(event.target.files?.[0]);
+            event.target.value = '';
         });
-        
-        window.onload = initSidebar;
+        document.getElementById('projectIn').addEventListener('change', event => {
+            const file = event.target.files?.[0];
+            event.target.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onerror = () => showToast('项目文件读取失败');
+            reader.onload = loadEvent => {
+                try { loadProject(JSON.parse(loadEvent.target.result)); }
+                catch (error) { showToast(error.message || '项目文件格式无效'); }
+            };
+            reader.readAsText(file);
+        });
+
+        document.addEventListener('keydown', event => {
+            const tag = event.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target.isContentEditable) return;
+            const command = event.ctrlKey || event.metaKey;
+            if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); act('del'); }
+            if (command && event.key.toLowerCase() === 'c') { event.preventDefault(); act('copy'); }
+            if (command && event.key.toLowerCase() === 'd') { event.preventDefault(); act('copy'); }
+            if (command && event.key.toLowerCase() === 's') { event.preventDefault(); saveProject(); }
+            if (command && event.key.toLowerCase() === 'g') { event.preventDefault(); event.shiftKey ? act('ungroup') : act('group'); }
+            if (command && !event.shiftKey && event.key.toLowerCase() === 'z') { event.preventDefault(); historyManager.undo(); }
+            if (command && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'))) { event.preventDefault(); historyManager.redo(); }
+        });
+
+        window.onload = () => { initSidebar(); setupDropZone(); updateCanvasUI(); };
 
     </script>
 </body>

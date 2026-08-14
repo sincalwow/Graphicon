@@ -1,86 +1,69 @@
-# 🎨 Graphic Code Pro (智能设计 - 吸附增强版)
+# Graphicon
 
-> 一个基于浏览器、单文件运行的轻量级矢量图形设计工具。无需安装，即开即用。
+> 一个无需构建步骤的浏览器端矢量图形编辑器。打开单一 HTML 文件即可绘制、组合、调整并导出设计稿。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Fabric.js](https://img.shields.io/badge/Powered%20by-Fabric.js-red)](http://fabricjs.com/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Fabric.js](https://img.shields.io/badge/Powered%20by-Fabric.js-red)](https://fabricjs.com/)
 
-**如果你觉得这个项目有趣或对你有帮助，请给它一个 ⭐️ Star！你的支持是我更新的动力！**
+Graphicon 以 **Fabric.js 5.3.1** 为图形引擎，提供深色工作区、内置 SVG 素材库与本地文件导入能力。项目坚持单文件分发，适合快速制作图标、简单海报和 SVG 草图，也便于离线保存、二次定制或静态站点托管。
 
----
+## 功能概览
 
-## ✨ 项目简介 (Introduction)
+| 范畴 | 功能 |
+| --- | --- |
+| 编辑 | 添加文字与内置 SVG 图标；导入图片和 SVG；移动、缩放、旋转、复制、删除、组合与解组。 |
+| 对齐 | 支持画布边缘/中心对齐，以及对象中心和边缘的智能吸附与辅助线。 |
+| 样式 | 支持文字加粗与斜体、对象透明度、矢量填充/描边换色，以及位图主色提取和近似色替换。 |
+| 画布 | 可配置 64–4096 px 的画布宽高；提供网格参考、比例锁定和空白新建流程。 |
+| 项目文件 | 可将画布及元素下载为 `.graphicon` 项目文件，随后重新打开继续编辑。 |
+| 导出 | 按内容边界导出 2× 透明 PNG，或导出可编辑 SVG。 |
 
-**Graphic Code Pro** 是一个纯前端实现的在线平面设计工具。它集成了专业的矢量编辑功能，拥有极简的暗色模式 UI，核心逻辑基于强大的 Fabric.js 库，并经过深度定制优化。
+## 快速开始
 
-这个版本特别增强了 **智能吸附 (Smart Snap)** 和 **辅助线系统**，让设计排版如同在专业桌面软件中一样丝滑。
+项目不需要安装 Node.js、依赖或构建工具。克隆仓库后，直接在 Chrome、Edge、Firefox 等现代浏览器中打开 `index.html` 即可使用。
 
-## 🚀 核心功能 (Features)
+```bash
+git clone https://github.com/sincalwow/Graphicon.git
+cd Graphicon
+# 在浏览器中打开 "index.html"
+```
 
-* **📐 智能辅助与吸附 (Smart Guides & Snapping)**
-    * 支持对象中心、边缘自动吸附。
-    * 自动显示对齐辅助线（画布中心对齐 + 对象间对齐）。
-    * 吸附阈值平滑，操作手感极佳。
+本地图片和 SVG 可通过“上传素材”按钮导入，也可以直接拖入工作区。由于第三方依赖由公共 CDN 提供，首次使用需要联网；如需完全离线运行，请将 Fabric.js、Font Awesome 和字体资源替换为本地副本。
 
-* **🎨 智能色彩管理**
-    * **图片取色**：上传图片自动提取主色调，支持一键替换图片特定颜色（基于像素距离算法）。
-    * **矢量换色**：自动识别 SVG/矢量图形中的所有颜色，支持批量替换。
+> `.graphicon` 是 Graphicon 的 JSON 项目格式，包含画布尺寸、网格状态与完整的可编辑对象数据。它不是图片格式；如需用于发布，请导出 PNG 或 SVG。
 
-* **history 历史记录系统**
-    * 深度优化的撤销 (Undo) / 重做 (Redo) 机制。
-    * 包含状态去重与防抖逻辑，避免无效操作污染历史栈。
+## 工作流程
 
-* **🛠 丰富的工具箱**
-    * 内置图标素材库（基础形状、医疗、餐饮、创意等分类）。
-    * 图层管理（置顶、置底、成组/解组）。
-    * 文字编辑（加粗、斜体、字号）。
+新建设计后，可以先在右侧设置画布尺寸，再从左侧素材库添加图标、添加文字或拖入图片。选中对象后，右侧属性面板可调整尺寸、透明度和颜色。画布中存在对象时，“保存”会下载项目文件；使用“打开”即可恢复该设计。
 
-* **💾 导出与保存**
-    * 支持导出高清透明 PNG。
-    * 支持导出可编辑 SVG 矢量源文件。
+为避免误操作，“新建”会在当前画布含有内容时要求确认。导出的 PNG 与 SVG 只包含设计对象，不包含编辑辅助线和网格。
 
-## 📦 如何使用 (Getting Started)
+## 快捷键
 
-本项目是 **单文件 (Single-file)** 架构，极易部署和修改。
+| 快捷键 | 功能 |
+| --- | --- |
+| `Ctrl/Cmd + Z` | 撤销 |
+| `Ctrl/Cmd + Y` 或 `Ctrl/Cmd + Shift + Z` | 重做 |
+| `Delete` / `Backspace` | 删除选中对象 |
+| `Ctrl/Cmd + C` 或 `Ctrl/Cmd + D` | 复制选中对象 |
+| `Ctrl/Cmd + G` | 将多选对象组合 |
+| `Ctrl/Cmd + Shift + G` | 解组 |
+| `Ctrl/Cmd + S` | 下载当前 `.graphicon` 项目文件 |
+| 拖动对象 | 触发智能吸附；可在右侧关闭吸附或辅助线 |
 
-1.  **下载代码**：Clone 本仓库或直接下载 ZIP。
-2.  **运行**：直接双击打开 `index.html` 文件即可在浏览器中运行（推荐 Chrome/Edge）。
-    * *注意：由于图片跨域安全策略，涉及本地图片处理的高级功能建议在本地服务器环境（如 Live Server）下运行以获得最佳体验。*
+## 技术构成
 
-## 🎮 快捷键 (Shortcuts)
+| 组件 | 用途 |
+| --- | --- |
+| HTML5 / CSS3 / Vanilla JavaScript | 单文件用户界面和交互逻辑。 |
+| [Fabric.js 5.3.1](https://fabricjs.com/) | 画布对象、SVG、图片、选择与序列化。 |
+| [Font Awesome 6.4.0](https://fontawesome.com/) | 工具栏图标。 |
+| [Inter](https://fonts.google.com/specimen/Inter) | 界面字体。 |
 
-| 按键 | 功能 |
-| :--- | :--- |
-| `Ctrl + Z` | 撤销 (Undo) |
-| `Ctrl + Y` 或 `Ctrl + Shift + Z` | 重做 (Redo) |
-| `Delete` / `Backspace` | 删除选中元素 |
-| `Ctrl + C` | 复制当前元素 |
-| `Ctrl + G` | 成组 (Group) |
-| `Ctrl + Shift + G` | 解组 (Ungroup) |
-| 拖拽元素 | 自动触发智能吸附 |
+## 贡献
 
-## 🛠️ 技术栈 (Tech Stack)
+欢迎通过 Issue 提出可复现的问题、交互建议或素材库扩展方案。提交改动时，请保持单文件运行能力，避免引入未声明的构建依赖，并在不同画布尺寸下验证导入、编辑、撤销/重做、项目恢复和导出流程。
 
-* **Core**: HTML5, CSS3, Vanilla JavaScript
-* **Graphics Engine**: [Fabric.js v5.3.1](http://fabricjs.com/)
-* **Icons**: FontAwesome 6.4.0
-* **Fonts**: Google Fonts (Inter)
+## 许可证
 
-## 🤝 贡献 (Contributing)
-
-非常欢迎提交 Issue 和 Pull Request！
-如果你有更好的吸附算法优化、新的素材库数据或者 UI 改进建议，请随时提交。
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
-## 📄 开源协议 (License)
-
-本项目基于 [MIT License](LICENSE) 开源。
-
----
-
-**Don't forget to star ⭐️ the repo if you found this useful!**
+本项目采用 [MIT License](LICENSE) 开源。
