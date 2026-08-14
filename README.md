@@ -1,12 +1,12 @@
 # Graphicon
 
-> 面向浏览器的专业矢量图形编辑器，提供路径与贝塞尔节点编辑、图层管理、精准布局、多格式导出，以及可选的安全 AI SVG 生成能力。
+> 面向浏览器的专业矢量图形编辑器，提供路径与贝塞尔节点编辑、图层管理、精准布局、多格式导出、插件扩展、实时协作，以及可选的安全 AI SVG 生成能力。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Fabric.js](https://img.shields.io/badge/Powered%20by-Fabric.js-red)](https://fabricjs.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933)](https://nodejs.org/)
 
-Graphicon 使用 **Fabric.js 5.3.1** 作为画布引擎。默认编辑器仍然可以直接打开 `index.html` 使用；当需要 AI SVG 生成功能时，请通过内置的轻量本地服务启动，以便把 API 密钥保留在服务器环境中，而不是暴露给浏览器。
+Graphicon 使用 **Fabric.js 5.3.1** 作为画布引擎。直接打开 `index.html` 可使用基础编辑、路径、图层和本地导出；需要 AI SVG 或实时协作时，应通过内置 Node.js 服务启动。该服务将 API 密钥保留在服务器环境中，并提供同实例内存协作房间。
 
 ## 功能概览
 
@@ -16,15 +16,17 @@ Graphicon 使用 **Fabric.js 5.3.1** 作为画布引擎。默认编辑器仍然�
 | 矢量编辑 | 添加文字、内置 SVG 图标、图片与 SVG 导入；移动、缩放、旋转、复制、删除、组合、解组。 |
 | 路径与贝塞尔 | 钢笔工具创建开放或闭合路径；节点编辑模式可拖动锚点、切换直线/贝塞尔曲线、调节控制柄和删除节点。 |
 | 图层与布局 | 图层工作台可选择、重命名、显示/隐藏、锁定/解锁、上移/下移；支持对齐、等距分布和统一尺寸。 |
-| 样式与画布 | 支持文字样式、对象透明度、矢量填充/描边换色、位图近似色替换、网格、比例锁定和 64–4096 px 画布。 |
+| 样式与画布 | 支持文字样式、对象透明度、矢量填充/描边换色、网格、比例锁定以及 64–4096 px 画布尺寸。 |
 | 导出中心 | 支持按对象边界导出透明 PNG、白底 JPG、透明 WebP、可编辑 SVG 与 `.graphicon` 项目文件；可选择 1×–4× 位图倍率。 |
-| AI SVG 助手 | 通过同源服务器安全调用任何 OpenAI Chat Completions 兼容服务，把生成结果作为可继续编辑的 SVG 加入画布。 |
+| 插件系统 | 提供受控 `Graphicon.registerPlugin()` API，可注册自定义图形工具和选区滤镜；内含星形、黑白滤镜和独立徽章示例插件。 |
+| 实时协作 | 支持基于房间的多用户在线成员状态、最后写入快照同步和断开清理。 |
+| AI SVG 助手 | 通过同源服务器安全调用 OpenAI Chat Completions 兼容服务，把生成结果作为可编辑 SVG 加入画布。 |
 
 ## 快速开始
 
 ### 仅使用本地编辑功能
 
-直接以现代浏览器打开 `index.html`。该方式支持画布、路径、图层、编辑、项目保存和所有本地导出功能。
+直接以现代浏览器打开 `index.html`。该方式支持画布、路径、图层、插件、项目保存和本地导出，但不支持实时协作或 AI 请求。
 
 ```bash
 git clone https://github.com/sincalwow/Graphicon.git
@@ -34,40 +36,85 @@ cd Graphicon
 
 本地图片和 SVG 可以通过“上传素材”导入，也可以拖入工作区。Fabric.js、Font Awesome 和字体来自公共 CDN；首次使用需要联网。若需要完全离线运行，请将这些资源替换为本地副本。
 
-### 启用 AI SVG 助手
+### 启用 AI SVG 与实时协作
 
-AI 功能采用独立的同源服务代理，**API 密钥只保存在服务器环境变量中，不会写入 HTML、项目文件或浏览器请求头**。服务使用 Node.js 内置模块，无需安装第三方依赖。
+AI 与协作通过同一个本地服务提供。安装依赖后启动服务，并访问 `http://localhost:4173`：
 
 ```bash
 cd Graphicon
+pnpm install
 cp .env.example .env
-# 在 .env 中填入你自己的 AI_API_KEY；请勿提交 .env
+# 可选：在 .env 中填写 AI_API_KEY；实时协作无需 AI 密钥
 set -a && source .env && set +a
-npm start
+pnpm start
 ```
-
-然后访问 `http://localhost:4173`。服务默认调用 OpenAI Chat Completions 兼容接口；可通过下列环境变量切换到任意兼容提供商：
 
 | 变量 | 用途 | 示例 |
 | --- | --- | --- |
-| `AI_API_KEY` | 提供商密钥，必填 | `your_provider_key` |
+| `AI_API_KEY` | AI 提供商密钥；仅 AI SVG 必填 | `your_provider_key` |
 | `AI_API_BASE` | Chat Completions 兼容服务基础地址 | `https://api.openai.com/v1` |
 | `AI_MODEL` | 用于 SVG 生成的模型名称 | `gpt-4.1-mini` |
 | `PORT` | 本地服务端口 | `4173` |
 
-> 请不要把真实密钥填入 `index.html`、Git 仓库或前端部署平台的公开变量。生产环境应由托管服务的私有环境变量注入 `AI_API_KEY`。
+> **安全说明：** API 密钥只会从服务端环境变量读取，不会写入 HTML、项目文件或浏览器请求头。不要提交 `.env`，也不要加载来源不明的插件脚本。
 
-## 矢量路径工作流
+## 插件开发
 
-点击顶部的**钢笔路径**，在画布中单击添加锚点；按住 `Shift` 单击可创建初始曲线节点。双击画布或再次点击首个锚点可完成路径，也可以在右侧路径面板选择“闭合路径”。
+插件是一个可信 JavaScript 文件。页面加载时可通过 `window.Graphicon.registerPlugin()` 注册工具或滤镜。项目提供 [示例插件](plugins/example-badge-plugin.js)，并在 `index.html` 中展示了加载方式。
 
-选中由钢笔创建的路径后，点击**节点与贝塞尔编辑**。白色锚点用于改变轮廓；双击锚点或使用“切换曲线”可添加/移除蓝色控制柄；拖动蓝色控制柄可改变贝塞尔曲线方向。完成编辑后点击“完成编辑”，路径会恢复为普通可选对象。
+```js
+window.Graphicon.registerPlugin({
+  id: 'acme.my-tool',
+  name: 'My Tool',
+  version: '1.0.0',
+  setup(api) {
+    api.registerTool({
+      id: 'add-shape',
+      label: '自定义图形',
+      icon: 'fa-star',
+      run({ fabric, canvas }) {
+        const object = new fabric.Circle({ radius: 40, fill: '#0d99ff' });
+        api.addObject(object, '自定义图形');
+      },
+    });
 
-## 项目与导出工作流
+    api.registerFilter({
+      id: 'my-filter',
+      label: '自定义滤镜',
+      run({ object }) {
+        if (!object) throw new Error('请先选择对象');
+        object.set({ opacity: 0.75 });
+      },
+    });
+  },
+});
+```
 
-`.graphicon` 是 Graphicon 的 JSON 项目格式，包含画布尺寸、网格状态、图层元数据与可编辑对象数据。它不是发布格式；请使用导出中心生成 PNG、JPG、WebP 或 SVG。
+插件 API 公开 `fabric`、`registerTool`、`registerFilter`、`addObject`、`getActiveObject`、`getSelectedObjects`、`showToast`、`requestRender` 和 `saveHistory`。插件以页面脚本权限执行，**仅应安装并在 `index.html` 中引用已审查的可信脚本**；当前版本不会下载或执行用户粘贴的远程代码。
 
-导出中心会忽略网格、辅助线和编辑控制柄，并按实际对象边界加留白裁切。PNG 和 WebP 保持透明背景；JPG 使用白色背景；SVG 保持图形对象的矢量结构。
+## 实时协作
+
+在左侧“实时协作”面板输入相同房间号和显示名称，点击“加入”。后加入者会接收房间中的现有画布；后续对象新增、删除与修改会以防抖后的完整画布快照同步至其他成员。成员列表会反映当前在线用户。
+
+> 当前协作协议采用**最后写入快照**策略：适合小团队共创和演示，不提供逐对象冲突合并、历史版本、权限控制或持久化。房间状态保存在单个服务进程的内存中，服务重启会清空；多实例部署会形成彼此隔离的房间。生产使用应部署为持续运行的单一服务实例，并在后续迭代中接入共享数据库、认证与冲突合并机制。
+
+## 矢量路径与导出工作流
+
+点击顶部的**钢笔路径**，在画布中单击添加锚点；按住 `Shift` 单击可创建初始曲线节点。双击画布或再次点击首个锚点可完成路径，也可以在右侧路径面板选择“闭合路径”。选中路径后，点击**节点与贝塞尔编辑**；白色锚点调整轮廓，蓝色控制柄调整曲线方向。
+
+`.graphicon` 是 Graphicon 的 JSON 项目格式，包含画布尺寸、网格状态、图层元数据与可编辑对象数据。导出中心会忽略网格、辅助线和编辑控制柄，并按实际对象边界加留白裁切。PNG/WebP 保持透明背景；JPG 使用白色背景；SVG 保持图形对象的矢量结构。
+
+## 自动化测试
+
+项目提供 Playwright 浏览器端到端测试；测试会自行启动隔离服务并使用 Chromium 验证真实交互。
+
+```bash
+pnpm run check      # 静态入口与文档契约检查
+pnpm run test:e2e   # 插件、路径/贝塞尔、PNG/JPG/WebP/SVG 导出与双客户端协作
+pnpm test           # 运行全部质量检查
+```
+
+当前端到端覆盖包含插件加载和操作、三节点可编辑路径、贝塞尔曲线控制柄、PNG/JPG/WebP/SVG 下载内容，以及同房间双页面画布同步。
 
 ## 快捷键
 
@@ -80,9 +127,7 @@ npm start
 | `Ctrl/Cmd + A` | 选择所有可见、未锁定的对象 |
 | `Ctrl/Cmd + G` / `Ctrl/Cmd + Shift + G` | 组合 / 解组 |
 | `Ctrl/Cmd + S` | 下载当前 `.graphicon` 项目文件 |
-| `P` | 开启或关闭钢笔路径工具 |
-| `N` | 开启或关闭节点与贝塞尔编辑 |
-| `Esc` | 取消当前钢笔路径或退出节点编辑 |
+| `P` / `N` / `Esc` | 钢笔路径 / 节点编辑 / 取消或退出编辑 |
 | `+` / `-` | 放大或缩小画布视图 |
 | `1` / `2` | 重置视图 / 聚焦当前选区 |
 | 按住 `Space` 或 `Alt` 并拖拽 | 平移画布视图 |
@@ -91,15 +136,15 @@ npm start
 
 | 组件 | 用途 |
 | --- | --- |
-| HTML5 / CSS3 / Vanilla JavaScript | 编辑器界面、路径交互、图层、布局和导出逻辑。 |
+| HTML5 / CSS3 / Vanilla JavaScript | 编辑器、插件宿主、路径交互、图层、布局、导出和协作客户端。 |
 | [Fabric.js 5.3.1](https://fabricjs.com/) | 画布对象、SVG、图片、选择、路径与序列化。 |
-| Node.js 内置 `http` / `fetch` | 提供静态入口并安全代理外部 AI SVG 生成请求。 |
+| Node.js / [`ws`](https://github.com/websockets/ws) | 静态入口、安全 AI 代理和房间 WebSocket 协作服务。 |
+| [Playwright](https://playwright.dev/) | 使用 Chromium 进行端到端自动化测试。 |
 | [Font Awesome 6.4.0](https://fontawesome.com/) | 工具栏与操作图标。 |
-| [Inter](https://fonts.google.com/specimen/Inter) | 界面字体。 |
 
 ## 贡献
 
-欢迎通过 Issue 提出可复现的问题、交互建议或素材库扩展方案。提交改动时，请保持直接打开 `index.html` 的基础编辑能力，并在不同画布尺寸下验证路径编辑、导入、图层、撤销/重做、项目恢复以及 PNG/SVG 导出流程。涉及 AI 服务时，严禁提交真实 API 密钥。
+欢迎通过 Issue 提出可复现的问题、交互建议或素材库扩展方案。提交改动时，请运行 `pnpm test`。涉及 AI 服务时严禁提交真实 API 密钥；涉及插件时请审查脚本来源；涉及协作协议时应保持房间隔离、消息大小限制与远端画布加载保护。
 
 ## 许可证
 

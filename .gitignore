@@ -5,6 +5,8 @@
 # Dependencies and logs
 node_modules/
 *.log
+test-results/
+playwright-report/
 
 # OS/editor artifacts
 .DS_Store

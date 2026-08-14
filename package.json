@@ -6,9 +6,17 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "check": "node ../verify_graphicon.mjs"
+    "check": "node ../verify_graphicon.mjs",
+    "test:e2e": "playwright test",
+    "test": "pnpm run check && pnpm run test:e2e"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "8.18.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
   }
 }
