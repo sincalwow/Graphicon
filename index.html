@@ -139,8 +139,9 @@
 
         /* 属性面板 */
         .props-panel {
-            width: 260px; background: var(--bg-sidebar); border-left: 1px solid var(--border);
+            width: 280px; background: var(--bg-sidebar); border-left: 1px solid var(--border);
             display: flex; flex-direction: column; padding: 15px; gap: 15px; z-index: 20; box-shadow: -5px 0 15px rgba(0,0,0,0.3);
+            overflow-y: auto;
         }
         .panel-card { background: var(--bg-tool); border-radius: 8px; padding: 15px; border: 1px solid #383838; }
         .panel-head { font-size: 11px; color: #888; margin-bottom: 10px; font-weight: 600; display:flex; justify-content:space-between; }
@@ -203,6 +204,46 @@
         .apply-btn { flex: 1; min-height: 32px; border: 0; border-radius: 5px; background: #3a78c4; color: #fff; cursor: pointer; font-weight: 700; font-size: 12px; }
         .apply-btn:hover { background: var(--accent); }
         .check-line { display: flex; align-items: center; gap: 7px; margin-top: 10px; color: #aaa; font-size: 12px; cursor: pointer; }
+        .field-label { display: block; margin: 10px 0 6px; color: #aaa; font-size: 11px; }
+        .select-input { appearance: none; background: #444; border: 1px solid #555; color: #fff; width: 100%; padding: 7px 28px 7px 8px; border-radius: 4px; font-size: 12px; }
+        .layout-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        .layout-grid .a-btn { min-height: 34px; padding: 7px 4px; }
+        .layout-divider { height: 1px; background: #454545; margin: 10px 0; }
+        .layers-card { min-height: 220px; display: flex; flex-direction: column; }
+        .layers-card .panel-head { align-items: center; }
+        .layer-header-actions { display: flex; gap: 4px; }
+        .layer-head-btn, .layer-action-btn {
+            border: 0; color: #bfc4ce; background: transparent; cursor: pointer; border-radius: 4px;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .layer-head-btn { width: 24px; height: 24px; font-size: 11px; }
+        .layer-head-btn:hover, .layer-action-btn:hover { color: #fff; background: #4b4b4b; }
+        .layers-list { display: flex; flex-direction: column; gap: 4px; max-height: 300px; overflow-y: auto; padding-right: 2px; }
+        .layers-list::-webkit-scrollbar { width: 5px; }
+        .layers-list::-webkit-scrollbar-thumb { background: #4d4d4d; border-radius: 4px; }
+        .layer-empty { color: #777; font-size: 12px; text-align: center; padding: 24px 8px; }
+        .layer-row {
+            min-height: 36px; display: grid; grid-template-columns: 22px minmax(0, 1fr) 25px 25px;
+            align-items: center; gap: 4px; padding: 4px 5px; border: 1px solid transparent; border-radius: 6px;
+            background: #383838; cursor: pointer; transition: background .16s, border-color .16s;
+        }
+        .layer-row:hover { background: #414141; }
+        .layer-row.active { background: rgba(55, 148, 255, .22); border-color: var(--accent); }
+        .layer-row.hidden { opacity: .55; }
+        .layer-type { color: var(--accent-light); font-size: 12px; text-align: center; }
+        .layer-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #dedede; font-size: 12px; }
+        .layer-row.locked .layer-name { color: #aaa; }
+        .layer-action-btn { width: 24px; height: 24px; font-size: 11px; }
+        .view-controls {
+            position: absolute; bottom: 18px; left: 18px; display: flex; align-items: center; gap: 3px;
+            padding: 5px; z-index: 120; border-radius: 22px; background: rgba(30,30,30,.9); border: 1px solid rgba(255,255,255,.12);
+            backdrop-filter: blur(8px); box-shadow: 0 5px 15px rgba(0,0,0,.28);
+        }
+        .view-btn { width: 30px; height: 30px; border: 0; border-radius: 50%; background: transparent; color: #ccc; cursor: pointer; }
+        .view-btn:hover { background: rgba(255,255,255,.1); color: #fff; }
+        .zoom-level { min-width: 48px; color: #d7d7d7; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; }
+        body.is-panning .workspace, body.is-panning .workspace * { cursor: grab !important; }
+        body.is-panning .workspace.panning, body.is-panning .workspace.panning * { cursor: grabbing !important; }
         @media (max-width: 1100px) {
             .sidebar { width: 260px; }
             .props-panel { width: 220px; padding: 10px; }
@@ -290,7 +331,14 @@
         </div>
 
         <div class="grid-toggle" id="gridToggle" onclick="toggleGrid()">
-            <i class="fas fa-th"></i> 网格参考
+            <i class="fas fa-th" aria-hidden="true"></i> 网格参考
+        </div>
+        <div class="view-controls" aria-label="画布视图控制">
+            <button type="button" class="view-btn" onclick="zoomBy(-0.1)" title="缩小 (-)" aria-label="缩小"><i class="fas fa-search-minus" aria-hidden="true"></i></button>
+            <span class="zoom-level" id="zoomLevel">100%</span>
+            <button type="button" class="view-btn" onclick="zoomBy(0.1)" title="放大 (+)" aria-label="放大"><i class="fas fa-search-plus" aria-hidden="true"></i></button>
+            <button type="button" class="view-btn" onclick="zoomToSelection()" title="聚焦选区 (2)" aria-label="聚焦选区"><i class="fas fa-expand" aria-hidden="true"></i></button>
+            <button type="button" class="view-btn" onclick="resetViewport()" title="重置视图 (1)" aria-label="重置视图"><i class="fas fa-compress" aria-hidden="true"></i></button>
         </div>
     </div>
     <div class="props-panel">
@@ -309,6 +357,15 @@
             <label class="check-line"><input type="checkbox" id="lockRatio" checked style="accent-color: var(--accent);"> 保持比例</label>
         </div>
         <div class="panel-card">
+            <div class="panel-head">位置与旋转</div>
+            <div class="size-inputs">
+                <div class="size-group"><label for="inpX">X</label><input type="number" id="inpX" class="size-input" onchange="setPosition('x', this.value)" placeholder="X"></div>
+                <div class="size-group"><label for="inpY">Y</label><input type="number" id="inpY" class="size-input" onchange="setPosition('y', this.value)" placeholder="Y"></div>
+            </div>
+            <label class="field-label" for="inpAngle">旋转角度</label>
+            <input type="number" id="inpAngle" class="size-input" onchange="setRotation(this.value)" placeholder="角度" step="1">
+        </div>
+        <div class="panel-card">
             <div class="panel-head">画布尺寸 (px)</div>
             <div class="size-inputs">
                 <div class="size-group"><label for="canvasW">W</label><input type="number" id="canvasW" class="size-input" value="800" min="64" max="4096" inputmode="numeric"></div>
@@ -317,14 +374,26 @@
             <div class="canvas-actions"><button type="button" class="apply-btn" onclick="applyCanvasSize()">应用画布尺寸</button></div>
         </div>
         <div class="panel-card">
-            <div class="panel-head">对齐</div>
-            <div class="align-btns">
-                <button class="a-btn" onclick="align('left')"><i class="fas fa-align-left"></i></button>
-                <button class="a-btn" onclick="align('center')"><i class="fas fa-align-center"></i></button>
-                <button class="a-btn" onclick="align('right')"><i class="fas fa-align-right"></i></button>
-                <button class="a-btn" onclick="align('top')"><i class="fas fa-align-left fa-rotate-90"></i></button>
-                <button class="a-btn" onclick="align('middle')"><i class="fas fa-align-center fa-rotate-90"></i></button>
-                <button class="a-btn" onclick="align('bottom')"><i class="fas fa-align-right fa-rotate-90"></i></button>
+            <div class="panel-head">对齐与分布</div>
+            <label class="field-label" for="layoutReference">对齐参照</label>
+            <select id="layoutReference" class="select-input">
+                <option value="canvas">画布</option>
+                <option value="selection">选区边界</option>
+            </select>
+            <div class="layout-grid" style="margin-top:10px">
+                <button type="button" class="a-btn" onclick="align('left')" title="左对齐"><i class="fas fa-align-left" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="align('center')" title="水平居中"><i class="fas fa-align-center" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="align('right')" title="右对齐"><i class="fas fa-align-right" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="align('top')" title="顶端对齐"><i class="fas fa-align-left fa-rotate-90" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="align('middle')" title="垂直居中"><i class="fas fa-align-center fa-rotate-90" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="align('bottom')" title="底端对齐"><i class="fas fa-align-right fa-rotate-90" aria-hidden="true"></i></button>
+            </div>
+            <div class="layout-divider"></div>
+            <div class="layout-grid">
+                <button type="button" class="a-btn" onclick="distribute('horizontal')" title="水平等距分布（至少 3 个对象）"><i class="fas fa-arrows-left-right" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="distribute('vertical')" title="垂直等距分布（至少 3 个对象）"><i class="fas fa-arrows-up-down" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="matchSize('width')" title="统一宽度"><i class="fas fa-arrows-left-right-to-line" aria-hidden="true"></i></button>
+                <button type="button" class="a-btn" onclick="matchSize('height')" title="统一高度"><i class="fas fa-arrows-up-down-to-line" aria-hidden="true"></i></button>
             </div>
         </div>
 
@@ -368,6 +437,16 @@
                 </label>
             </div>
         </div>
+        <div class="panel-card layers-card">
+            <div class="panel-head">
+                <span>图层 <span id="layerCount">0</span></span>
+                <span class="layer-header-actions">
+                    <button type="button" class="layer-head-btn" onclick="moveLayer('up')" title="上移一层" aria-label="上移一层"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
+                    <button type="button" class="layer-head-btn" onclick="moveLayer('down')" title="下移一层" aria-label="下移一层"><i class="fas fa-arrow-down" aria-hidden="true"></i></button>
+                </span>
+            </div>
+            <div id="layersList" class="layers-list" aria-label="图层列表"></div>
+        </div>
     </div>
 
     <script>
@@ -382,6 +461,12 @@
         let isGridActive = false;
         let toastTimer = null;
         let gridGroup = null;
+        let nextObjectId = 1;
+        let isSpacePressed = false;
+        let isPanning = false;
+        let lastPanPosition = null;
+        const MIN_ZOOM = 0.2;
+        const MAX_ZOOM = 4;
 
         // --- 模块 1: 历史记录管理器 (HistoryManager) ---
         class HistoryManager {
@@ -395,7 +480,7 @@
             }
 
             // 保存时包含的额外属性
-            get saveProps() { return ['selectable', 'evented', 'isGrid', 'excludeFromExport', 'id', 'filterId']; }
+            get saveProps() { return ['selectable', 'evented', 'isGrid', 'excludeFromExport', 'id', 'name', 'locked', 'filterId']; }
 
             save() {
                 if (this.locked) return;
@@ -460,10 +545,44 @@
         // 监听画布事件并挂钩到 HistoryManager
         const isUserObject = (object) => object && !object.isGrid && !object.excludeFromExport;
         const getUserObjects = () => canvas.getObjects().filter(isUserObject);
+        const getExportableObjects = () => getUserObjects().filter(object => object.visible !== false);
+        const getSelectedUserObjects = () => canvas.getActiveObjects().filter(isUserObject);
+
+        function objectTypeLabel(object) {
+            if (!object) return '对象';
+            if (object.type === 'image') return '图片';
+            if (object.type === 'group') return '组合';
+            if (object.type === 'path') return '路径';
+            if (object.type === 'i-text' || object.type === 'text' || object.type === 'textbox') return '文本';
+            if (object.type === 'rect') return '矩形';
+            if (object.type === 'circle') return '圆形';
+            if (object.type === 'triangle') return '三角形';
+            return '对象';
+        }
+
+        function prepareUserObject(object, preferredName) {
+            if (!object || !isUserObject(object)) return object;
+            if (!object.id) object.id = `obj_${Date.now().toString(36)}_${nextObjectId++}`;
+            if (!object.name) object.name = preferredName || objectTypeLabel(object);
+            if (object.locked) {
+                object.selectable = false;
+                object.evented = false;
+            }
+            return object;
+        }
+
+        function syncObjectMetadata() {
+            getUserObjects().forEach((object, index) => {
+                prepareUserObject(object, `${objectTypeLabel(object)} ${index + 1}`);
+            });
+        }
 
         function updateCanvasUI() {
+            syncObjectMetadata();
             updateStatus();
             updateProps();
+            renderLayers();
+            updateViewUI();
             document.getElementById('canvasHint').style.display = getUserObjects().length ? 'none' : 'block';
             document.getElementById('canvasSize').textContent = `${canvas.width}×${canvas.height}px`;
             document.getElementById('canvasW').value = canvas.width;
@@ -471,6 +590,7 @@
         }
 
         canvas.on('object:added', (e) => {
+            if (isUserObject(e.target)) prepareUserObject(e.target);
             updateCanvasUI();
             if (isUserObject(e.target)) historyManager.save();
         });
@@ -776,17 +896,14 @@
 
         // --- 功能函数区 ---
         function updateStatus() {
-            const sel = canvas.getActiveObject();
+            const selection = canvas.getActiveObject();
             let label = '无';
-            if (sel) {
-                if (sel.type === 'activeSelection') label = '多选对象';
-                else if (sel.type === 'group') label = '组合/SVG';
-                else if (sel.type === 'image') label = '位图';
-                else if (sel.type === 'path') label = '路径';
-                else label = '文本';
+            if (selection) {
+                label = selection.type === 'activeSelection' ? `多选对象（${getSelectedUserObjects().length}）` : (selection.name || objectTypeLabel(selection));
             }
             document.getElementById('selectedObj').textContent = label;
             document.getElementById('objCount').textContent = getUserObjects().length;
+            document.getElementById('layerCount').textContent = getUserObjects().length;
         }
 
         function toggleGrid() {
@@ -818,7 +935,7 @@
         }
 
         function exportContent(type) {
-            const objects = canvas.getObjects().filter(o => !o.isGrid && !o.excludeFromExport);
+            const objects = getExportableObjects();
             if(objects.length === 0) { showToast('画布为空，无法导出'); return; }
             canvas.discardActiveObject();
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1013,12 +1130,18 @@
                 box.style.display='none';
                 document.getElementById('inpW').value='';
                 document.getElementById('inpH').value='';
+                document.getElementById('inpX').value='';
+                document.getElementById('inpY').value='';
+                document.getElementById('inpAngle').value='';
                 return;
             }
 
             box.style.display='block';
             document.getElementById('inpW').value = Math.round(act.getScaledWidth());
             document.getElementById('inpH').value = Math.round(act.getScaledHeight());
+            document.getElementById('inpX').value = Math.round(act.left);
+            document.getElementById('inpY').value = Math.round(act.top);
+            document.getElementById('inpAngle').value = Math.round(act.angle || 0);
             document.getElementById('opacityRange').value = act.opacity;
             document.getElementById('op-val').textContent = Math.round(act.opacity * 100) + '%';
 
@@ -1175,48 +1298,235 @@
             });
         }
 
-        function addText() {
-            const txt = document.getElementById('txtInput').value || '双击编辑';
-            const size = parseInt(document.getElementById('txtSize').value) || 40;
-            const textObj = new fabric.IText(txt, {
-                left: canvas.width/2, top: canvas.height/2, fontSize: size,
-                fontWeight: document.getElementById('btnBold').classList.contains('active') ? 'bold':'normal',
-                fontStyle: document.getElementById('btnItalic').classList.contains('active') ? 'italic':'normal',
-                fill: '#3794ff', fontFamily: 'Inter, sans-serif', originX:'center', originY:'center'
+        function renderLayers() {
+            const list = document.getElementById('layersList');
+            if (!list) return;
+            const objects = getUserObjects().slice().reverse();
+            const selected = new Set(getSelectedUserObjects());
+            list.innerHTML = '';
+            if (!objects.length) {
+                list.innerHTML = '<div class="layer-empty">画布尚无图层<br>添加文字、图标或图片后会显示在这里。</div>';
+                return;
+            }
+            objects.forEach((object, reverseIndex) => {
+                prepareUserObject(object, `${objectTypeLabel(object)} ${objects.length - reverseIndex}`);
+                const row = document.createElement('div');
+                row.className = `layer-row${selected.has(object) ? ' active' : ''}${object.visible === false ? ' hidden' : ''}${object.locked ? ' locked' : ''}`;
+                row.tabIndex = 0;
+                row.title = '单击选择；双击重命名';
+                row.dataset.objectId = object.id;
+
+                const type = document.createElement('span');
+                type.className = 'layer-type';
+                type.innerHTML = `<i class="fas ${object.type === 'image' ? 'fa-image' : object.type === 'group' ? 'fa-object-group' : object.type === 'path' ? 'fa-draw-polygon' : 'fa-font'}" aria-hidden="true"></i>`;
+                const name = document.createElement('span');
+                name.className = 'layer-name';
+                name.textContent = object.name;
+                const visibility = document.createElement('button');
+                visibility.type = 'button';
+                visibility.className = 'layer-action-btn';
+                visibility.title = object.visible === false ? '显示图层' : '隐藏图层';
+                visibility.setAttribute('aria-label', visibility.title);
+                visibility.innerHTML = `<i class="fas ${object.visible === false ? 'fa-eye-slash' : 'fa-eye'}" aria-hidden="true"></i>`;
+                const lock = document.createElement('button');
+                lock.type = 'button';
+                lock.className = 'layer-action-btn';
+                lock.title = object.locked ? '解锁图层' : '锁定图层';
+                lock.setAttribute('aria-label', lock.title);
+                lock.innerHTML = `<i class="fas ${object.locked ? 'fa-lock' : 'fa-lock-open'}" aria-hidden="true"></i>`;
+
+                row.append(type, name, visibility, lock);
+                row.addEventListener('click', () => selectLayer(object));
+                row.addEventListener('dblclick', () => renameLayer(object));
+                row.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectLayer(object); }
+                });
+                visibility.addEventListener('click', event => { event.stopPropagation(); toggleLayerVisibility(object); });
+                lock.addEventListener('click', event => { event.stopPropagation(); toggleLayerLock(object); });
+                list.appendChild(row);
             });
+        }
+
+        function selectLayer(object) {
+            if (object.visible === false) return showToast('请先显示该图层');
+            if (object.locked) return showToast('图层已锁定，请先解锁');
+            canvas.discardActiveObject();
+            canvas.setActiveObject(object);
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function renameLayer(object) {
+            const nextName = window.prompt('输入图层名称', object.name || objectTypeLabel(object));
+            if (nextName === null) return;
+            const cleanName = nextName.trim();
+            if (!cleanName) return showToast('图层名称不能为空');
+            object.name = cleanName.slice(0, 60);
+            historyManager.save();
+            updateCanvasUI();
+            showToast('图层已重命名');
+        }
+
+        function toggleLayerVisibility(object) {
+            object.visible = object.visible === false;
+            if (object.visible === false && canvas.getActiveObjects().includes(object)) canvas.discardActiveObject();
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function toggleLayerLock(object) {
+            object.locked = !object.locked;
+            object.selectable = !object.locked;
+            object.evented = !object.locked;
+            if (object.locked && canvas.getActiveObjects().includes(object)) canvas.discardActiveObject();
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function moveLayer(direction) {
+            const object = canvas.getActiveObject();
+            if (!object || object.type === 'activeSelection') return showToast('请选择一个图层后再调整层级');
+            if (direction === 'up') object.bringForward();
+            if (direction === 'down') object.sendBackwards();
+            if (isGridActive && gridGroup) gridGroup.sendToBack();
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function addText() {
+            const text = document.getElementById('txtInput').value || '双击编辑';
+            const size = parseInt(document.getElementById('txtSize').value) || 40;
+            const textObj = new fabric.IText(text, {
+                left: canvas.width / 2, top: canvas.height / 2, fontSize: size,
+                fontWeight: document.getElementById('btnBold').classList.contains('active') ? 'bold' : 'normal',
+                fontStyle: document.getElementById('btnItalic').classList.contains('active') ? 'italic' : 'normal',
+                fill: '#3794ff', fontFamily: 'Inter, sans-serif', originX: 'center', originY: 'center'
+            });
+            prepareUserObject(textObj, text.length > 18 ? `${text.slice(0, 18)}…` : text);
             canvas.add(textObj); canvas.setActiveObject(textObj); historyManager.save();
         }
         function addPath(d) {
-            const path = new fabric.Path(d);
-            // 移除 scaleX: 3, scaleY: 3，改用通用配置
-            path.set({
-                fill: '#3794ff',
-                left: canvas.width/2,
-                top: canvas.height/2,
-                originX: 'center',
-                originY: 'center'
+            const pathObject = new fabric.Path(d);
+            pathObject.set({
+                fill: '#3794ff', left: canvas.width / 2, top: canvas.height / 2, originX: 'center', originY: 'center'
             });
-
-            // 智能缩放：无论原始图标多大，都统一缩放到 200像素 宽
-            path.scaleToWidth(200);
-
-            canvas.add(path);
-            canvas.setActiveObject(path);
+            pathObject.scaleToWidth(200);
+            prepareUserObject(pathObject, '图标路径');
+            canvas.add(pathObject);
+            canvas.setActiveObject(pathObject);
             historyManager.save();
         }
         function toggleStyle(btn) { btn.classList.toggle('active'); }
-        function align(p) {
-            const o = canvas.getActiveObject(); if(!o) return;
-            const w = canvas.width, h = canvas.height;
-            const b = o.getBoundingRect(true);
-            if(p=='left') o.set('left', o.left - b.left);
-            if(p=='right') o.set('left', w - (b.left+b.width) + o.left);
-            if(p=='center') o.centerH();
-            if(p=='top') o.set('top', o.top - b.top);
-            if(p=='bottom') o.set('top', h - (b.top+b.height) + o.top);
-            if(p=='middle') o.centerV();
-            o.setCoords(); historyManager.save(); canvas.requestRenderAll();
+
+        function getObjectsBounds(objects) {
+            const bounds = objects.map(object => object.getBoundingRect(true, true));
+            return {
+                left: Math.min(...bounds.map(bound => bound.left)),
+                top: Math.min(...bounds.map(bound => bound.top)),
+                right: Math.max(...bounds.map(bound => bound.left + bound.width)),
+                bottom: Math.max(...bounds.map(bound => bound.top + bound.height))
+            };
         }
+
+        function moveObjectBy(object, dx, dy) {
+            object.set({ left: object.left + dx, top: object.top + dy });
+            object.setCoords();
+        }
+
+        function align(position) {
+            const objects = getSelectedUserObjects();
+            if (!objects.length) return showToast('请先选择对象');
+            const reference = document.getElementById('layoutReference').value;
+            if (reference === 'selection' && objects.length < 2) return showToast('选区对齐至少需要两个对象');
+            const bounds = reference === 'canvas'
+                ? { left: 0, top: 0, right: canvas.width, bottom: canvas.height }
+                : getObjectsBounds(objects);
+            const centerX = (bounds.left + bounds.right) / 2;
+            const centerY = (bounds.top + bounds.bottom) / 2;
+            objects.forEach(object => {
+                const rect = object.getBoundingRect(true, true);
+                if (position === 'left') moveObjectBy(object, bounds.left - rect.left, 0);
+                if (position === 'center') moveObjectBy(object, centerX - (rect.left + rect.width / 2), 0);
+                if (position === 'right') moveObjectBy(object, bounds.right - (rect.left + rect.width), 0);
+                if (position === 'top') moveObjectBy(object, 0, bounds.top - rect.top);
+                if (position === 'middle') moveObjectBy(object, 0, centerY - (rect.top + rect.height / 2));
+                if (position === 'bottom') moveObjectBy(object, 0, bounds.bottom - (rect.top + rect.height));
+            });
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function distribute(axis) {
+            const objects = getSelectedUserObjects();
+            if (objects.length < 3) return showToast('等距分布至少需要选择三个对象');
+            const isHorizontal = axis === 'horizontal';
+            const items = objects.map(object => ({ object, rect: object.getBoundingRect(true, true) }))
+                .sort((a, b) => isHorizontal ? a.rect.left - b.rect.left : a.rect.top - b.rect.top);
+            const first = items[0].rect;
+            const last = items[items.length - 1].rect;
+            const totalSize = items.reduce((sum, item) => sum + (isHorizontal ? item.rect.width : item.rect.height), 0);
+            const span = isHorizontal
+                ? last.left + last.width - first.left
+                : last.top + last.height - first.top;
+            const gap = (span - totalSize) / (items.length - 1);
+            let cursor = isHorizontal ? first.left : first.top;
+            items.forEach((item, index) => {
+                const size = isHorizontal ? item.rect.width : item.rect.height;
+                if (index > 0 && index < items.length - 1) {
+                    if (isHorizontal) moveObjectBy(item.object, cursor - item.rect.left, 0);
+                    else moveObjectBy(item.object, 0, cursor - item.rect.top);
+                }
+                cursor += size + gap;
+            });
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+            showToast(`已完成${isHorizontal ? '水平' : '垂直'}等距分布`);
+        }
+
+        function matchSize(axis) {
+            const objects = getSelectedUserObjects();
+            if (objects.length < 2) return showToast('统一尺寸至少需要选择两个对象');
+            const reference = canvas.getActiveObject();
+            const size = axis === 'width' ? reference.getScaledWidth() : reference.getScaledHeight();
+            objects.forEach(object => {
+                if (object === reference) return;
+                axis === 'width' ? object.scaleToWidth(size) : object.scaleToHeight(size);
+                object.setCoords();
+            });
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function setPosition(axis, value) {
+            const object = canvas.getActiveObject();
+            const next = Number(value);
+            if (!object) return showToast('请先选择对象');
+            if (!Number.isFinite(next)) { updateProps(); return showToast('坐标必须是有效数字'); }
+            object.set(axis === 'x' ? 'left' : 'top', next);
+            object.setCoords();
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function setRotation(value) {
+            const object = canvas.getActiveObject();
+            const angle = Number(value);
+            if (!object) return showToast('请先选择对象');
+            if (!Number.isFinite(angle)) { updateProps(); return showToast('旋转角度必须是有效数字'); }
+            object.set('angle', ((angle % 360) + 360) % 360);
+            object.setCoords();
+            historyManager.save();
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
         function setSize(type, value) {
             const object = canvas.getActiveObject();
             const next = Number(value);
@@ -1279,6 +1589,7 @@
             clearGuides();
             canvas.clear();
             canvas.setDimensions(DEFAULT_CANVAS_SIZE);
+            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
             canvas.backgroundColor = null;
             isGridActive = false;
             gridGroup = null;
@@ -1292,7 +1603,7 @@
         function saveProject() {
             const project = {
                 application: 'Graphicon',
-                version: 1,
+                version: 2,
                 createdAt: new Date().toISOString(),
                 canvas: { width: canvas.width, height: canvas.height, backgroundColor: canvas.backgroundColor || null },
                 gridEnabled: isGridActive,
@@ -1319,6 +1630,7 @@
             isGridActive = false;
             gridGroup = null;
             canvas.setDimensions({ width, height });
+            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
             canvas.backgroundColor = project.canvas?.backgroundColor || null;
             canvas.loadFromJSON(project.objects, () => {
                 isGridActive = Boolean(project.gridEnabled);
@@ -1345,6 +1657,7 @@
                         if (!objects?.length) return showToast('未能解析该 SVG 文件');
                         const group = fabric.util.groupSVGElements(objects, options);
                         group.scaleToWidth(Math.min(200, canvas.width * .45));
+                        prepareUserObject(group, file.name.replace(/\.svg$/i, '') || '导入 SVG');
                         canvas.centerObject(group);
                         canvas.add(group);
                         canvas.setActiveObject(group);
@@ -1355,6 +1668,7 @@
                     fabric.Image.fromURL(data, (image) => {
                         if (!image) return showToast('未能读取该图片');
                         image.scaleToWidth(Math.min(300, canvas.width * .6));
+                        prepareUserObject(image, file.name || '导入图片');
                         canvas.centerObject(image);
                         canvas.add(image);
                         canvas.setActiveObject(image);
@@ -1364,6 +1678,79 @@
                 }
             };
             reader.readAsDataURL(file);
+        }
+
+        function updateViewUI() {
+            const label = document.getElementById('zoomLevel');
+            if (label) label.textContent = `${Math.round(canvas.getZoom() * 100)}%`;
+        }
+
+        function clampZoom(zoom) {
+            return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
+        }
+
+        function zoomBy(delta) {
+            const zoom = clampZoom(canvas.getZoom() + delta);
+            const center = new fabric.Point(canvas.width / 2, canvas.height / 2);
+            canvas.zoomToPoint(center, zoom);
+            canvas.requestRenderAll();
+            updateViewUI();
+        }
+
+        function resetViewport() {
+            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            canvas.requestRenderAll();
+            updateViewUI();
+        }
+
+        function zoomToSelection() {
+            const object = canvas.getActiveObject();
+            if (!object) return showToast('请先选择对象');
+            const rect = object.getBoundingRect(true, true);
+            const zoom = clampZoom(Math.min((canvas.width - 120) / rect.width, (canvas.height - 120) / rect.height));
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            canvas.setViewportTransform([zoom, 0, 0, zoom, canvas.width / 2 - centerX * zoom, canvas.height / 2 - centerY * zoom]);
+            canvas.requestRenderAll();
+            updateViewUI();
+        }
+
+        function setupViewportControls() {
+            const workspace = document.querySelector('.workspace');
+            canvas.on('mouse:wheel', option => {
+                const event = option.e;
+                const zoom = clampZoom(canvas.getZoom() * Math.pow(0.999, event.deltaY));
+                canvas.zoomToPoint(new fabric.Point(event.offsetX, event.offsetY), zoom);
+                event.preventDefault();
+                event.stopPropagation();
+                canvas.requestRenderAll();
+                updateViewUI();
+            });
+            canvas.on('mouse:down', option => {
+                if (!isSpacePressed && !option.e.altKey) return;
+                isPanning = true;
+                lastPanPosition = { x: option.e.clientX, y: option.e.clientY };
+                canvas.selection = false;
+                canvas.skipTargetFind = true;
+                workspace.classList.add('panning');
+            });
+            canvas.on('mouse:move', option => {
+                if (!isPanning || !lastPanPosition) return;
+                const transform = canvas.viewportTransform;
+                transform[4] += option.e.clientX - lastPanPosition.x;
+                transform[5] += option.e.clientY - lastPanPosition.y;
+                lastPanPosition = { x: option.e.clientX, y: option.e.clientY };
+                canvas.requestRenderAll();
+            });
+            canvas.on('mouse:up', () => {
+                if (!isPanning) return;
+                isPanning = false;
+                lastPanPosition = null;
+                canvas.selection = true;
+                canvas.skipTargetFind = false;
+                workspace.classList.remove('panning');
+                updateViewUI();
+            });
         }
 
         function setupDropZone() {
@@ -1403,16 +1790,34 @@
             const tag = event.target.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target.isContentEditable) return;
             const command = event.ctrlKey || event.metaKey;
+            if (event.code === 'Space') { isSpacePressed = true; document.body.classList.add('is-panning'); event.preventDefault(); return; }
             if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); act('del'); }
+            if (command && event.key.toLowerCase() === 'a') {
+                event.preventDefault();
+                const selectableObjects = getUserObjects().filter(object => object.visible !== false && !object.locked);
+                if (!selectableObjects.length) return showToast('画布中没有可选择的对象');
+                canvas.discardActiveObject();
+                if (selectableObjects.length === 1) canvas.setActiveObject(selectableObjects[0]);
+                else canvas.setActiveObject(new fabric.ActiveSelection(selectableObjects, { canvas }));
+                canvas.requestRenderAll();
+                updateCanvasUI();
+            }
             if (command && event.key.toLowerCase() === 'c') { event.preventDefault(); act('copy'); }
             if (command && event.key.toLowerCase() === 'd') { event.preventDefault(); act('copy'); }
             if (command && event.key.toLowerCase() === 's') { event.preventDefault(); saveProject(); }
             if (command && event.key.toLowerCase() === 'g') { event.preventDefault(); event.shiftKey ? act('ungroup') : act('group'); }
             if (command && !event.shiftKey && event.key.toLowerCase() === 'z') { event.preventDefault(); historyManager.undo(); }
             if (command && (event.key.toLowerCase() === 'y' || (event.shiftKey && event.key.toLowerCase() === 'z'))) { event.preventDefault(); historyManager.redo(); }
+            if (event.key === '1') { event.preventDefault(); resetViewport(); }
+            if (event.key === '2') { event.preventDefault(); zoomToSelection(); }
+            if (event.key === '+' || event.key === '=') { event.preventDefault(); zoomBy(0.1); }
+            if (event.key === '-') { event.preventDefault(); zoomBy(-0.1); }
+        });
+        document.addEventListener('keyup', event => {
+            if (event.code === 'Space') { isSpacePressed = false; document.body.classList.remove('is-panning'); }
         });
 
-        window.onload = () => { initSidebar(); setupDropZone(); updateCanvasUI(); };
+        window.onload = () => { initSidebar(); setupDropZone(); setupViewportControls(); updateCanvasUI(); };
 
     </script>
 </body>
