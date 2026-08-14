@@ -7,7 +7,10 @@ import { WebSocketServer, WebSocket } from 'ws';
 const PORT = Number.parseInt(process.env.PORT || '4173', 10);
 const AI_API_BASE = (process.env.AI_API_BASE || 'https://api.openai.com/v1').replace(/\/$/, '');
 const AI_MODEL = process.env.AI_MODEL || 'gpt-4.1-mini';
+const AI_IMAGE_BASE = (process.env.AI_IMAGE_BASE || AI_API_BASE).replace(/\/$/, '');
+const AI_IMAGE_MODEL = process.env.AI_IMAGE_MODEL || 'gpt-image-1';
 const MAX_PROMPT_LENGTH = 800;
+const MAX_IMAGE_BYTES = 5_000_000;
 const MAX_DOCUMENT_SIZE = 1_000_000;
 const ROOT = process.cwd();
 const rooms = new Map();
@@ -135,6 +138,125 @@ async function generateSvg(prompt) {
   return svg;
 }
 
+
+function getImageApiKey() {
+  return process.env.AI_IMAGE_API_KEY || process.env.AI_API_KEY || '';
+}
+
+function imageSize(value) {
+  return ['1024x1024', '1024x1536', '1536x1024'].includes(value) ? value : '1024x1024';
+}
+
+function dataUrlFromBuffer(buffer, contentType) {
+  return `data:${contentType};base64,${Buffer.from(buffer).toString('base64')}`;
+}
+
+async function upstreamImageDataUrl(url) {
+  let target;
+  try { target = new URL(url); } catch { throw new Error('AI 图片地址无效'); }
+  if (target.protocol !== 'https:') throw new Error('AI 图片地址必须使用 HTTPS');
+  const response = await fetch(target, { signal: AbortSignal.timeout(20_000) });
+  const contentType = response.headers.get('content-type') || '';
+  if (!response.ok || !contentType.startsWith('image/')) throw new Error('AI 图片下载失败');
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > MAX_IMAGE_BYTES) throw new Error('AI 图片大小超出限制');
+  return dataUrlFromBuffer(bytes, contentType.split(';')[0]);
+}
+
+async function generateImage(prompt, requestedSize) {
+  const apiKey = getImageApiKey();
+  if (!apiKey) {
+    const error = new Error('未配置 AI_IMAGE_API_KEY 或 AI_API_KEY。请在服务器环境中设置图像服务密钥后重试。');
+    error.status = 503;
+    throw error;
+  }
+  const upstream = await fetch(`${AI_IMAGE_BASE}/images/generations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    body: JSON.stringify({ model: AI_IMAGE_MODEL, prompt, size: imageSize(requestedSize), n: 1, response_format: 'b64_json' }),
+  });
+  const data = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) {
+    const error = new Error(data?.error?.message || `图像服务返回 ${upstream.status}`);
+    error.status = upstream.status;
+    throw error;
+  }
+  const image = data?.data?.[0];
+  if (typeof image?.b64_json === 'string' && /^[A-Za-z0-9+/=]+$/.test(image.b64_json)) {
+    return `data:image/png;base64,${image.b64_json}`;
+  }
+  if (typeof image?.url === 'string') return upstreamImageDataUrl(image.url);
+  const error = new Error('AI 未返回可导入的图片数据');
+  error.status = 422;
+  throw error;
+}
+
+function clampLayoutPlan(plan, count) {
+  const mode = ['grid', 'row', 'column'].includes(plan?.mode) ? plan.mode : 'grid';
+  const parse = (value, fallback, min, max) => Math.min(max, Math.max(min, Number.parseInt(value, 10) || fallback));
+  return {
+    mode,
+    columns: mode === 'column' ? 1 : mode === 'row' ? count : parse(plan?.columns, Math.ceil(Math.sqrt(count)), 1, count),
+    gap: parse(plan?.gap, 30, 12, 120),
+    padding: parse(plan?.padding, 64, 20, 180),
+    rationale: String(plan?.rationale || '').replace(/[<>]/g, '').slice(0, 160),
+  };
+}
+
+function extractJson(content) {
+  const text = String(content || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start < 0 || end < start) return null;
+  try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
+}
+
+async function suggestLayout(input) {
+  if (!process.env.AI_API_KEY) {
+    const error = new Error('未配置 AI_API_KEY。请设置密钥后使用 AI 排版；也可以使用本地快速排列。');
+    error.status = 503;
+    throw error;
+  }
+  const objects = Array.isArray(input?.objects) ? input.objects.slice(0, 50).map(object => ({
+    id: String(object?.id || '').slice(0, 100), name: String(object?.name || '对象').slice(0, 80),
+    type: String(object?.type || 'object').slice(0, 30), width: Math.max(1, Math.min(4096, Number(object?.width) || 1)),
+    height: Math.max(1, Math.min(4096, Number(object?.height) || 1)),
+  })).filter(object => object.id) : [];
+  if (objects.length < 2) {
+    const error = new Error('AI 排版至少需要两个对象');
+    error.status = 400;
+    throw error;
+  }
+  const canvas = {
+    width: Math.max(64, Math.min(4096, Number(input?.canvas?.width) || 800)),
+    height: Math.max(64, Math.min(4096, Number(input?.canvas?.height) || 800)),
+  };
+  const upstream = await fetch(`${AI_API_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.AI_API_KEY}` },
+    body: JSON.stringify({
+      model: AI_MODEL, temperature: 0.2, max_tokens: 240,
+      messages: [
+        { role: 'system', content: 'You are a layout assistant for a vector editor. Return ONLY JSON with mode (grid|row|column), columns (integer), gap (12..120), padding (20..180), and a concise Chinese rationale. Never include markdown or positions.' },
+        { role: 'user', content: JSON.stringify({ canvas, objects }) },
+      ],
+    }),
+  });
+  const data = await upstream.json().catch(() => ({}));
+  if (!upstream.ok) {
+    const error = new Error(data?.error?.message || `AI 服务返回 ${upstream.status}`);
+    error.status = upstream.status;
+    throw error;
+  }
+  const plan = extractJson(data?.choices?.[0]?.message?.content);
+  if (!plan) {
+    const error = new Error('AI 未返回有效的布局建议');
+    error.status = 422;
+    throw error;
+  }
+  return clampLayoutPlan(plan, objects.length);
+}
+
 async function serveStatic(pathname, response) {
   const requested = pathname === '/' ? '/index.html' : pathname;
   const safePath = normalize(requested).replace(/^([.][.][/\\])+/, '');
@@ -161,6 +283,26 @@ const server = createServer(async (request, response) => {
       return send(response, 200, { svg });
     } catch (error) {
       return send(response, error.status || 500, { error: error.message || 'AI 服务异常' });
+    }
+  }
+  if (request.method === 'POST' && url.pathname === '/api/ai/generate-image') {
+    try {
+      const body = await readJson(request);
+      const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+      if (prompt.length < 3 || prompt.length > MAX_PROMPT_LENGTH) return send(response, 400, { error: `提示词长度需在 3–${MAX_PROMPT_LENGTH} 个字符之间` });
+      const image = await generateImage(prompt, body.size);
+      return send(response, 200, { image });
+    } catch (error) {
+      return send(response, error.status || 500, { error: error.message || '图像服务异常' });
+    }
+  }
+  if (request.method === 'POST' && url.pathname === '/api/ai/layout') {
+    try {
+      const body = await readJson(request);
+      const plan = await suggestLayout(body);
+      return send(response, 200, { plan });
+    } catch (error) {
+      return send(response, error.status || 500, { error: error.message || 'AI 排版服务异常' });
     }
   }
   if (request.method !== 'GET' && request.method !== 'HEAD') return send(response, 405, { error: '不支持的请求方法' });
@@ -223,6 +365,7 @@ collaborationServer.on('connection', socket => {
 
 server.listen(PORT, () => {
   console.log(`Graphicon 正在运行：http://localhost:${PORT}`);
-  console.log(`AI 模型：${AI_MODEL}；AI 服务：${process.env.AI_API_KEY ? '已配置' : '未配置'}`);
+  console.log(`AI 文本模型：${AI_MODEL}；文本服务：${process.env.AI_API_KEY ? '已配置' : '未配置'}`);
+  console.log(`AI 图像模型：${AI_IMAGE_MODEL}；图像服务：${getImageApiKey() ? '已配置' : '未配置'}`);
   console.log('实时协作：ws://localhost:' + PORT + '/collaboration（内存房间，仅适用于单一常驻实例）');
 });

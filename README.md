@@ -20,7 +20,7 @@ Graphicon 使用 **Fabric.js 5.3.1** 作为画布引擎。直接打开 `index.ht
 | 导出中心 | 支持按对象边界导出透明 PNG、白底 JPG、透明 WebP、可编辑 SVG 与 `.graphicon` 项目文件；可选择 1×–4× 位图倍率。 |
 | 插件系统 | 提供受控 `Graphicon.registerPlugin()` API，可注册自定义图形工具和选区滤镜；内含星形、黑白滤镜和独立徽章示例插件。 |
 | 实时协作 | 支持基于房间的多用户在线成员状态、最后写入快照同步和断开清理。 |
-| AI SVG 助手 | 通过同源服务器安全调用 OpenAI Chat Completions 兼容服务，把生成结果作为可编辑 SVG 加入画布。 |
+| AI 生成与排版 | 通过同源服务器安全调用兼容的 Chat Completions 与 Images API；支持可编辑 SVG、文生图、AI 布局建议及无需密钥的本地智能排版。 |
 
 ## 快速开始
 
@@ -36,7 +36,7 @@ cd Graphicon
 
 本地图片和 SVG 可以通过“上传素材”导入，也可以拖入工作区。Fabric.js、Font Awesome 和字体来自公共 CDN；首次使用需要联网。若需要完全离线运行，请将这些资源替换为本地副本。
 
-### 启用 AI SVG 与实时协作
+### 启用 AI 生成、智能排版与实时协作
 
 AI 与协作通过同一个本地服务提供。安装依赖后启动服务，并访问 `http://localhost:4173`：
 
@@ -53,10 +53,13 @@ pnpm start
 | --- | --- | --- |
 | `AI_API_KEY` | AI 提供商密钥；仅 AI SVG 必填 | `your_provider_key` |
 | `AI_API_BASE` | Chat Completions 兼容服务基础地址 | `https://api.openai.com/v1` |
-| `AI_MODEL` | 用于 SVG 生成的模型名称 | `gpt-4.1-mini` |
+| `AI_MODEL` | 用于 SVG 与 AI 排版的 Chat Completions 模型 | `gpt-4.1-mini` |
+| `AI_IMAGE_API_KEY` | 可选的独立图像服务密钥；为空时复用 `AI_API_KEY` | `your_image_provider_key` |
+| `AI_IMAGE_BASE` | 支持 `POST /images/generations` 的图像服务地址；为空时复用 `AI_API_BASE` | `https://api.openai.com/v1` |
+| `AI_IMAGE_MODEL` | 文生图模型名称 | `gpt-image-1` |
 | `PORT` | 本地服务端口 | `4173` |
 
-> **安全说明：** API 密钥只会从服务端环境变量读取，不会写入 HTML、项目文件或浏览器请求头。不要提交 `.env`，也不要加载来源不明的插件脚本。
+> **安全说明：** API 密钥只会从服务端环境变量读取，不会写入 HTML、项目文件或浏览器请求头。图像服务的远端 URL 会在服务器端转换为受大小限制的数据 URL，再交给浏览器画布加载。不要提交 `.env`，也不要加载来源不明的插件脚本。
 
 ## 插件开发
 
@@ -110,6 +113,14 @@ Graphicon 保留 Fabric.js 处理画布对象、选择、交互、序列化与�
 
 `.graphicon` 是 Graphicon 的 JSON 项目格式，包含画布尺寸、网格状态、图层元数据与可编辑对象数据。导出中心会忽略网格、辅助线和编辑控制柄，并按实际对象边界加留白裁切。PNG/WebP 保持透明背景；JPG 使用白色背景；SVG 保持图形对象的矢量结构。
 
+## 历史记录与智能编辑
+
+Graphicon 的撤销/重做采用**事务化画布快照**。每条历史记录同时保存可编辑对象、画布尺寸、背景与网格状态；连续的批量操作（例如智能排版）会合并为单一步骤。工具栏和左侧状态会实时显示可撤销/可重做的数量，支持 `Ctrl/Cmd + Z`、`Ctrl/Cmd + Y` 与 `Ctrl/Cmd + Shift + Z`。
+
+“智能排版”提供两种工作流。**快速排列**在浏览器中按网格、横向或纵向的确定性规则布局，不需要网络或密钥；**AI 建议**会仅将对象名称、类型、尺寸和画布尺寸发送给已配置的 Chat Completions 服务，并返回受服务端校验的列数、间距和留白建议。它不发送图片像素、项目文件或 API 密钥。
+
+AI 生成面板可选择**生成可编辑 SVG**或**文生图**。SVG 模式要求兼容的 Chat Completions 服务；文生图模式要求兼容 `POST /images/generations` 的服务。缺少相应密钥时，服务会返回明确错误，不会将任何密钥暴露给浏览器。
+
 ## 自动化测试
 
 项目提供 Playwright 浏览器端到端测试；测试会自行启动隔离服务并使用 Chromium 验证真实交互。
@@ -120,7 +131,7 @@ pnpm run test:e2e   # 插件、路径/贝塞尔、PNG/JPG/WebP/SVG 导出与双�
 pnpm test           # 运行全部质量检查
 ```
 
-当前端到端覆盖包含插件加载和操作、三节点可编辑路径、贝塞尔曲线控制柄、Paper.js 的合并/相减/相交/排除、路径简化与平滑、PNG/JPG/WebP/SVG 下载内容，以及同房间双页面画布同步。
+当前端到端覆盖包含插件加载和操作、事务化撤销/重做（含网格恢复）、本地智能排版及其历史回滚、三节点可编辑路径、贝塞尔曲线控制柄、Paper.js 的合并/相减/相交/排除、路径简化与平滑、PNG/JPG/WebP/SVG 下载内容，以及同房间双页面画布同步。
 
 ## 快捷键
 
@@ -145,7 +156,7 @@ pnpm test           # 运行全部质量检查
 | HTML5 / CSS3 / Vanilla JavaScript | 编辑器、插件宿主、路径交互、图层、布局、导出和协作客户端。 |
 | [Fabric.js 5.3.1](https://fabricjs.com/) | 画布对象、SVG、图片、选择、交互控制与序列化。 |
 | [Paper.js 0.12.18](https://paperjs.org/) | 隔离的路径几何计算、贝塞尔简化/平滑和合并、相减、相交、排除运算。 |
-| Node.js / [`ws`](https://github.com/websockets/ws) | 静态入口、安全 AI 代理和房间 WebSocket 协作服务。 |
+| Node.js / [`ws`](https://github.com/websockets/ws) | 静态入口、安全 AI SVG/图像/布局代理和房间 WebSocket 协作服务。 |
 | [Playwright](https://playwright.dev/) | 使用 Chromium 进行端到端自动化测试。 |
 | [Font Awesome 6.4.0](https://fontawesome.com/) | 工具栏与操作图标。 |
 

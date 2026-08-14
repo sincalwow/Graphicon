@@ -58,6 +58,56 @@ test.describe('Graphicon professional editor', () => {
     await expect(page.locator('#pathModeBadge')).toHaveText('3 个节点');
   });
 
+  test('records transactional history across canvas and grid changes, then restores with undo and redo', async ({ page }) => {
+    await appReady(page);
+    const initial = await page.evaluate(() => {
+      canvas.clear();
+      isGridActive = false;
+      gridGroup = null;
+      historyManager.reset('测试初始状态');
+      historyManager.transaction('添加两枚测试图形', () => {
+        const first = new fabric.Rect({ left: 130, top: 150, width: 100, height: 90, fill: '#ff725c' });
+        const second = new fabric.Circle({ left: 380, top: 310, radius: 50, fill: '#4c9aff' });
+        prepareUserObject(first, '历史矩形');
+        prepareUserObject(second, '历史圆形');
+        canvas.add(first, second);
+      });
+      toggleGrid();
+      return { undo: historyManager.undoStack.length, redo: historyManager.redoStack.length, grid: isGridActive, count: getUserObjects().length };
+    });
+    expect(initial).toMatchObject({ undo: 2, redo: 0, grid: true, count: 2 });
+    await page.evaluate(() => historyManager.undo());
+    await expect.poll(() => page.evaluate(() => ({ grid: isGridActive, count: getUserObjects().length, redo: historyManager.redoStack.length }))).toMatchObject({ grid: false, count: 2, redo: 1 });
+    await page.evaluate(() => historyManager.undo());
+    await expect.poll(() => page.evaluate(() => ({ grid: isGridActive, count: getUserObjects().length }))).toMatchObject({ grid: false, count: 0 });
+    await page.evaluate(() => { historyManager.redo(); historyManager.redo(); });
+    await expect.poll(() => page.evaluate(() => ({ grid: isGridActive, count: getUserObjects().length, undo: historyManager.undoStack.length }))).toMatchObject({ grid: true, count: 2, undo: 2 });
+    await expect(page.locator('#historyStatus')).toContainText('撤销 2');
+  });
+
+  test('applies local intelligent layout as one reversible transaction', async ({ page }) => {
+    await appReady(page);
+    const result = await page.evaluate(() => {
+      canvas.clear();
+      historyManager.reset('布局初始状态');
+      const shapes = [
+        new fabric.Rect({ left: 60, top: 65, width: 180, height: 90, fill: '#ff725c' }),
+        new fabric.Circle({ left: 520, top: 130, radius: 70, fill: '#4c9aff' }),
+        new fabric.Triangle({ left: 250, top: 560, width: 150, height: 130, fill: '#52c41a' }),
+      ];
+      shapes.forEach((shape, index) => { prepareUserObject(shape, `布局对象 ${index + 1}`); canvas.add(shape); });
+      historyManager.reset('布局初始状态');
+      const before = shapes.map(shape => ({ left: shape.left, top: shape.top }));
+      autoLayoutCanvas();
+      const after = getUserObjects().map(shape => ({ left: Math.round(shape.left), top: Math.round(shape.top) }));
+      historyManager.undo();
+      return { before, after, undoCount: historyManager.undoStack.length };
+    });
+    expect(result.undoCount).toBe(0);
+    expect(result.after).not.toEqual(result.before);
+    await expect.poll(() => page.evaluate(() => getUserObjects().map(shape => ({ left: shape.left, top: shape.top })))).toEqual(result.before);
+  });
+
   test('runs Paper.js boolean operations and exports the editable union as SVG', async ({ page }) => {
     await appReady(page);
     const operations = ['subtract', 'intersect', 'exclude', 'unite'];

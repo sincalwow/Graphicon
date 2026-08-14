@@ -159,6 +159,14 @@
         .ai-generate-btn { flex: 1; min-height: 34px; border: 0; border-radius: 6px; cursor: pointer; color: #fff; font-weight: 700; background: linear-gradient(135deg, #7652e9, #b060d9); }
         .ai-generate-btn:disabled { cursor: wait; opacity: .62; }
         .ai-status { color: #9f91c8; font-size: 10px; line-height: 1.35; margin: 8px 0 0; }
+        .history-status { color: #88a6c8; font-size: 10px; line-height: 1.35; margin: 7px 0 0; }
+        .history-status strong { color: #dbeeff; font-weight: 700; }
+        .ai-mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; }
+        .ai-layout-card { border-color: rgba(103, 180, 255, .32); background: linear-gradient(145deg, rgba(37, 85, 132, .21), rgba(43,43,43,.95)); }
+        .ai-layout-card .panel-head { color: #b9dcff; }
+        .ai-layout-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 9px; }
+        .ai-layout-status { color: #9bb6d1; font-size: 10px; line-height: 1.45; margin: 8px 0 0; }
+        .tool-icon:disabled { opacity: .35; cursor: not-allowed; transform: none !important; }
         .plugins-card { margin: 0 10px 10px; border-color: rgba(38, 198, 218, .32); background: linear-gradient(145deg, rgba(18, 87, 100, .21), rgba(36,36,36,.9)); }
         .plugins-card .panel-head { color: #bdeff6; }
         .plugin-list { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
@@ -437,8 +445,13 @@
         <div class="panel-card ai-card" aria-labelledby="ai-title">
             <div class="panel-head" id="ai-title"><span><i class="fas fa-sparkles" aria-hidden="true"></i> AI 矢量助手</span><span>Beta</span></div>
             <textarea id="aiPrompt" class="std-input ai-prompt" maxlength="800" placeholder="例如：创建一枚极简蓝色鲸鱼徽标，圆润线条，透明背景"></textarea>
-            <div class="ai-action"><button type="button" id="aiGenerateBtn" class="ai-generate-btn" onclick="generateAIVector()"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 生成 SVG</button></div>
-            <p class="ai-status" id="aiStatus">需通过本地或部署服务器配置 AI_API_KEY；密钥不会写入浏览器或项目文件。</p>
+            <div class="ai-mode-row">
+                <select id="aiGenerationMode" class="select-input" onchange="updateAIModeUI()"><option value="svg">生成可编辑 SVG</option><option value="image">文生图</option></select>
+                <select id="aiImageSize" class="select-input" aria-label="文生图尺寸"><option value="1024x1024">1024 × 1024</option><option value="1024x1536">1024 × 1536</option><option value="1536x1024">1536 × 1024</option></select>
+            </div>
+            <div class="ai-action"><button type="button" id="aiGenerateBtn" class="ai-generate-btn" onclick="generateAIAsset()"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 生成 SVG</button></div>
+            <p class="ai-status" id="aiStatus">SVG 使用 AI_API_KEY；文生图需要兼容 Images API 的 AI_IMAGE_BASE / AI_IMAGE_MODEL。密钥不会写入浏览器或项目文件。</p>
+            <p class="history-status" id="historyStatus"><strong>历史记录</strong> · 撤销 0 · 重做 0</p>
         </div>
         <div class="panel-card plugins-card" aria-labelledby="plugins-title">
             <div class="panel-head" id="plugins-title"><span><i class="fas fa-puzzle-piece" aria-hidden="true"></i> 插件工作台</span><span id="pluginCount">0</span></div>
@@ -457,8 +470,8 @@
     </div>
     <div class="workspace">
         <div class="float-tools">
-            <button type="button" class="tool-icon" onclick="historyManager.undo()" title="撤销 (Ctrl+Z)" aria-label="撤销"><i class="fas fa-undo" aria-hidden="true"></i></button>
-            <button type="button" class="tool-icon" onclick="historyManager.redo()" title="重做 (Ctrl+Y)" aria-label="重做"><i class="fas fa-redo" aria-hidden="true"></i></button>
+            <button type="button" class="tool-icon" id="btnUndo" onclick="historyManager.undo()" title="撤销 (Ctrl+Z)" aria-label="撤销"><i class="fas fa-undo" aria-hidden="true"></i></button>
+            <button type="button" class="tool-icon" id="btnRedo" onclick="historyManager.redo()" title="重做 (Ctrl+Y)" aria-label="重做"><i class="fas fa-redo" aria-hidden="true"></i></button>
             <div class="sep"></div>
 
             <button class="tool-icon delete" onclick="act('del')" title="删除 (Delete)"><i class="fas fa-trash"></i></button>
@@ -567,6 +580,16 @@
             </div>
         </div>
 
+        <div class="panel-card ai-layout-card" id="aiLayoutCard">
+            <div class="panel-head"><span><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 智能排版</span><span>AI</span></div>
+            <label class="field-label" for="aiLayoutMode">本地布局模式</label>
+            <select id="aiLayoutMode" class="select-input"><option value="grid">自适应网格</option><option value="row">横向陈列</option><option value="column">纵向陈列</option></select>
+            <div class="ai-layout-actions">
+                <button type="button" class="a-btn" onclick="autoLayoutCanvas()" title="使用本地确定性规则快速排列对象"><i class="fas fa-table-cells" aria-hidden="true"></i> 快速排列</button>
+                <button type="button" class="a-btn" id="aiLayoutBtn" onclick="requestAILayout()" title="使用已配置的 AI 服务生成布局建议"><i class="fas fa-sparkles" aria-hidden="true"></i> AI 建议</button>
+            </div>
+            <p class="ai-layout-status" id="aiLayoutStatus">选择两个或更多对象后可排列；未选择时将处理全部可见图层。AI 建议需要 AI_API_KEY，本地快速排列无需密钥。</p>
+        </div>
         <div class="panel-card">
             <div class="panel-head">透明度 <span id="op-val">100%</span></div>
             <input type="range" id="opacityRange" style="width:100%; accent-color:var(--accent)" min="0" max="1" step="0.05" value="1" oninput="setOpacity(this.value)">
@@ -669,75 +692,139 @@
         const MIN_ZOOM = 0.2;
         const MAX_ZOOM = 4;
 
-        // --- 模块 1: 历史记录管理器 (HistoryManager) ---
+        // --- 模块 1: 事务化历史记录管理器 (HistoryManager) ---
         class HistoryManager {
             constructor(canvas) {
                 this.canvas = canvas;
                 this.undoStack = [];
                 this.redoStack = [];
-                this.maxHistory = 50;
-                this.locked = false; // 锁：防止 undo/redo 过程中触发保存
-                this.currentState = JSON.stringify(canvas.toJSON(this.saveProps));
+                this.maxHistory = 120;
+                this.locked = false;
+                this.transactionDepth = 0;
+                this.transactionLabel = null;
+                this.transactionDirty = false;
+                this.currentLabel = '初始画布';
+                this.currentState = this.capture();
+                this.updateUI();
             }
 
-            // 保存时包含的额外属性
             get saveProps() { return ['selectable', 'evented', 'isGrid', 'excludeFromExport', 'id', 'name', 'locked', 'editablePathData', 'filterId']; }
 
-            save() {
-                if (this.locked) return;
-
-                const newState = JSON.stringify(this.canvas.toJSON(this.saveProps));
-
-                // 去重优化：如果状态未变，不保存（解决无效点击产生的历史）
-                if (newState === this.currentState) return;
-
-                if (this.undoStack.length >= this.maxHistory) this.undoStack.shift();
-                this.undoStack.push(this.currentState);
-
-                this.currentState = newState;
-                this.redoStack = []; // 清空重做栈
-            }
-
-            undo() {
-                if (this.undoStack.length === 0) {
-                    showToast("没有可撤销的操作");
-                    return;
-                }
-                this.locked = true;
-                this.redoStack.push(this.currentState);
-                const prevState = this.undoStack.pop();
-                this.currentState = prevState;
-
-                this.loadState(prevState);
-            }
-
-            redo() {
-                if (this.redoStack.length === 0) {
-                    showToast("没有可恢复的操作");
-                    return;
-                }
-                this.locked = true;
-                this.undoStack.push(this.currentState);
-                const nextState = this.redoStack.pop();
-                this.currentState = nextState;
-
-                this.loadState(nextState);
-            }
-
-            loadState(json) {
-                this.canvas.loadFromJSON(json, () => {
-                    this.canvas.renderAll();
-                    this.locked = false;
-                    updateCanvasUI();
-                    if (isGridActive) drawGrid();
+            capture() {
+                return JSON.stringify({
+                    version: 4,
+                    canvas: { width: this.canvas.width, height: this.canvas.height, backgroundColor: this.canvas.backgroundColor || null },
+                    grid: Boolean(isGridActive),
+                    objects: this.canvas.toJSON(this.saveProps).objects.filter(object => !object.isGrid && !object.excludeFromExport),
                 });
             }
 
-            reset() {
+            updateUI() {
+                const undo = document.getElementById('btnUndo');
+                const redo = document.getElementById('btnRedo');
+                const summary = document.getElementById('historyStatus');
+                if (undo) { undo.disabled = this.undoStack.length === 0 || this.locked; undo.title = this.undoStack.length ? `撤销：${this.currentLabel} (Ctrl+Z)` : '没有可撤销的操作'; }
+                if (redo) { redo.disabled = this.redoStack.length === 0 || this.locked; redo.title = this.redoStack.length ? `重做：${this.redoStack[this.redoStack.length - 1].label} (Ctrl+Y)` : '没有可重做的操作'; }
+                if (summary) summary.innerHTML = `<strong>历史记录</strong> · 撤销 ${this.undoStack.length} · 重做 ${this.redoStack.length}`;
+            }
+
+            begin(label = '批量编辑') {
+                if (this.locked) return;
+                this.transactionDepth += 1;
+                if (this.transactionDepth === 1) { this.transactionLabel = label; this.transactionDirty = false; }
+            }
+
+            end(label) {
+                if (this.locked || this.transactionDepth === 0) return;
+                this.transactionDepth -= 1;
+                if (this.transactionDepth === 0) {
+                    const finalLabel = label || this.transactionLabel || '批量编辑';
+                    this.transactionLabel = null;
+                    this.transactionDirty = false;
+                    this.save(finalLabel);
+                }
+            }
+
+            transaction(label, callback) {
+                this.begin(label);
+                try { return callback(); }
+                finally { this.end(label); }
+            }
+
+            save(label = '编辑画布') {
+                if (this.locked) return false;
+                if (this.transactionDepth > 0) {
+                    this.transactionDirty = true;
+                    if (label && label !== '编辑画布') this.transactionLabel = label;
+                    return false;
+                }
+                const nextState = this.capture();
+                if (nextState === this.currentState) return false;
+                if (this.undoStack.length >= this.maxHistory) this.undoStack.shift();
+                this.undoStack.push({ state: this.currentState, label: this.currentLabel });
+                this.currentState = nextState;
+                this.currentLabel = label;
+                this.redoStack = [];
+                this.updateUI();
+                return true;
+            }
+
+            undo() {
+                if (!this.undoStack.length) return showToast('没有可撤销的操作');
+                const undoneLabel = this.currentLabel;
+                this.locked = true;
+                this.redoStack.push({ state: this.currentState, label: this.currentLabel });
+                const previous = this.undoStack.pop();
+                this.currentState = previous.state;
+                this.currentLabel = previous.label;
+                this.restore(previous.state, () => showToast(`已撤销：${undoneLabel}`));
+            }
+
+            redo() {
+                if (!this.redoStack.length) return showToast('没有可重做的操作');
+                this.locked = true;
+                this.undoStack.push({ state: this.currentState, label: this.currentLabel });
+                const next = this.redoStack.pop();
+                this.currentState = next.state;
+                this.currentLabel = next.label;
+                this.restore(next.state, () => showToast(`已重做：${next.label}`));
+            }
+
+            restore(serialized, complete) {
+                let documentState;
+                try { documentState = JSON.parse(serialized); }
+                catch { documentState = { version: 4, canvas: { width: DEFAULT_CANVAS_SIZE.width, height: DEFAULT_CANVAS_SIZE.height }, grid: false, objects: [] }; }
+                const modern = documentState?.version >= 4 && Array.isArray(documentState.objects);
+                const canvasState = modern ? documentState.canvas || {} : { width: this.canvas.width, height: this.canvas.height, backgroundColor: this.canvas.backgroundColor };
+                const objects = modern ? documentState.objects : documentState.objects || [];
+                clearGuides();
+                clearNodeControls();
+                if (gridGroup) { this.canvas.remove(gridGroup); gridGroup = null; }
+                this.canvas.discardActiveObject();
+                this.canvas.setDimensions({ width: Number(canvasState.width) || DEFAULT_CANVAS_SIZE.width, height: Number(canvasState.height) || DEFAULT_CANVAS_SIZE.height });
+                this.canvas.backgroundColor = canvasState.backgroundColor || null;
+                isGridActive = modern ? Boolean(documentState.grid) : false;
+                document.getElementById('gridToggle').classList.toggle('active', isGridActive);
+                this.canvas.loadFromJSON({ objects }, () => {
+                    syncObjectMetadata();
+                    if (isGridActive) drawGrid();
+                    this.locked = false;
+                    this.canvas.requestRenderAll();
+                    updateCanvasUI();
+                    this.updateUI();
+                    complete?.();
+                });
+            }
+
+            reset(label = '导入项目') {
                 this.undoStack = [];
                 this.redoStack = [];
-                this.currentState = JSON.stringify(this.canvas.toJSON(this.saveProps));
+                this.currentState = this.capture();
+                this.currentLabel = label;
                 this.locked = false;
+                this.transactionDepth = 0;
+                this.transactionDirty = false;
+                this.updateUI();
             }
         }
 
@@ -1663,6 +1750,7 @@
             control.addClass?.(anchor ? 'node-control-anchor' : 'node-control-handle');
             control.on('selected', () => { selectedNodeIndex = nodeIndex; updatePathEditorUI(); });
             control.on('moving', () => updateEditableNodeFromControl(control));
+            control.on('modified', () => historyManager.save('调整贝塞尔节点'));
             control.on('mousedblclick', () => {
                 if (anchor) toggleNodeCurve(path, nodeIndex);
             });
@@ -1844,6 +1932,8 @@
                 btn.classList.remove('active');
                 if(gridGroup) { canvas.remove(gridGroup); gridGroup = null; }
             }
+            historyManager.save('切换网格');
+            updateCanvasUI();
         }
         function drawGrid() {
             if(gridGroup) canvas.remove(gridGroup);
@@ -1932,10 +2022,28 @@
             exportContent(type, { scale });
         }
 
-        async function generateAIVector() {
+        function updateAIModeUI() {
+            const mode = document.getElementById('aiGenerationMode')?.value || 'svg';
+            const button = document.getElementById('aiGenerateBtn');
+            const size = document.getElementById('aiImageSize');
+            if (button) button.innerHTML = mode === 'image'
+                ? '<i class="fas fa-image" aria-hidden="true"></i> 生成图片'
+                : '<i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 生成 SVG';
+            if (size) size.disabled = mode !== 'image';
+        }
+
+        async function postAI(path, payload) {
+            const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(result.error || 'AI 服务暂时不可用');
+            return result;
+        }
+
+        async function generateAIAsset() {
             const promptInput = document.getElementById('aiPrompt');
             const button = document.getElementById('aiGenerateBtn');
             const status = document.getElementById('aiStatus');
+            const mode = document.getElementById('aiGenerationMode')?.value || 'svg';
             const prompt = promptInput.value.trim();
             if (prompt.length < 3) return showToast('请至少输入三个字符的设计描述');
             if (window.location.protocol === 'file:') {
@@ -1943,30 +2051,128 @@
                 return showToast('AI 功能需要通过本地服务器运行');
             }
             button.disabled = true;
-            status.textContent = '正在请求 AI 生成矢量图形…';
+            status.textContent = mode === 'image' ? '正在请求 AI 生成图片…' : '正在请求 AI 生成矢量图形…';
             try {
-                const response = await fetch('/api/ai/generate-svg', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt })
-                });
-                const result = await response.json().catch(() => ({}));
-                if (!response.ok) throw new Error(result.error || 'AI 服务暂时不可用');
+                if (mode === 'image') {
+                    const size = document.getElementById('aiImageSize').value;
+                    const result = await postAI('/api/ai/generate-image', { prompt, size });
+                    if (!result.image || !/^https:|^data:image\//.test(result.image)) throw new Error('AI 未返回可安全导入的图片');
+                    await new Promise((resolve, reject) => {
+                        fabric.Image.fromURL(result.image, image => {
+                            if (!image) return reject(new Error('AI 图片无法载入画布'));
+                            image.scaleToWidth(Math.min(360, canvas.width * .62));
+                            prepareUserObject(image, `AI 图片：${prompt.slice(0, 20)}${prompt.length > 20 ? '…' : ''}`);
+                            canvas.centerObject(image);
+                            canvas.add(image);
+                            canvas.setActiveObject(image);
+                            canvas.requestRenderAll();
+                            historyManager.save('AI 文生图');
+                            resolve();
+                        }, { crossOrigin: 'anonymous' });
+                    });
+                    status.textContent = '已生成图片；可继续缩放、裁切、加滤镜并导出。';
+                    showToast('AI 图片已添加到画布');
+                    return;
+                }
+                const result = await postAI('/api/ai/generate-svg', { prompt });
                 if (!result.svg || !result.svg.includes('<svg')) throw new Error('AI 未返回有效 SVG');
-                fabric.loadSVGFromString(result.svg, (objects, options) => {
-                    if (!objects?.length) return showToast('AI 返回的 SVG 无可编辑对象');
-                    const group = fabric.util.groupSVGElements(objects, options);
-                    group.scaleToWidth(Math.min(320, canvas.width * .55));
-                    prepareUserObject(group, `AI：${prompt.slice(0, 24)}${prompt.length > 24 ? '…' : ''}`);
-                    canvas.centerObject(group);
-                    canvas.add(group);
-                    canvas.setActiveObject(group);
-                    canvas.requestRenderAll();
-                    historyManager.save();
-                    status.textContent = '已生成可编辑 SVG；可继续调整、换色、分组和导出。';
-                    showToast('AI SVG 已添加到画布');
+                await new Promise((resolve, reject) => {
+                    fabric.loadSVGFromString(result.svg, (objects, options) => {
+                        if (!objects?.length) return reject(new Error('AI 返回的 SVG 无可编辑对象'));
+                        const group = fabric.util.groupSVGElements(objects, options);
+                        group.scaleToWidth(Math.min(320, canvas.width * .55));
+                        prepareUserObject(group, `AI：${prompt.slice(0, 24)}${prompt.length > 24 ? '…' : ''}`);
+                        canvas.centerObject(group);
+                        canvas.add(group);
+                        canvas.setActiveObject(group);
+                        canvas.requestRenderAll();
+                        historyManager.save('AI SVG 生成');
+                        resolve();
+                    });
                 });
+                status.textContent = '已生成可编辑 SVG；可继续调整、换色、分组和导出。';
+                showToast('AI SVG 已添加到画布');
             } catch (error) {
                 status.textContent = `AI 请求失败：${error.message}`;
                 showToast('AI 生成未完成，请检查服务器配置');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function layoutTargets() {
+            const selected = getSelectedUserObjects().filter(object => object.visible !== false && !object.locked);
+            return selected.length >= 2 ? selected : getExportableObjects().filter(object => !object.locked);
+        }
+
+        function normalizeLayoutPlan(plan, count) {
+            const mode = ['grid', 'row', 'column'].includes(plan?.mode) ? plan.mode : 'grid';
+            const autoColumns = Math.max(1, Math.ceil(Math.sqrt(count)));
+            const columns = mode === 'column' ? 1 : mode === 'row' ? count : Math.min(count, Math.max(1, Number.parseInt(plan?.columns, 10) || autoColumns));
+            return {
+                mode, columns,
+                gap: Math.min(120, Math.max(12, Number(plan?.gap) || 30)),
+                padding: Math.min(180, Math.max(20, Number(plan?.padding) || 64)),
+                rationale: typeof plan?.rationale === 'string' ? plan.rationale.slice(0, 160) : '',
+            };
+        }
+
+        function applyLayoutPlan(rawPlan, label = '智能排版') {
+            const targets = layoutTargets();
+            if (targets.length < 2) return showToast('请至少添加两个未锁定、可见对象');
+            const plan = normalizeLayoutPlan(rawPlan, targets.length);
+            const columns = plan.columns;
+            const rows = Math.ceil(targets.length / columns);
+            const gap = plan.gap;
+            const availableWidth = Math.max(80, canvas.width - plan.padding * 2 - gap * (columns - 1));
+            const availableHeight = Math.max(80, canvas.height - plan.padding * 2 - gap * (rows - 1));
+            const cellWidth = availableWidth / columns;
+            const cellHeight = availableHeight / rows;
+            historyManager.transaction(label, () => {
+                targets.forEach((object, index) => {
+                    const row = Math.floor(index / columns);
+                    const column = index % columns;
+                    const bounds = object.getBoundingRect(true, true);
+                    const fit = Math.min(1, (cellWidth * .8) / Math.max(1, bounds.width), (cellHeight * .8) / Math.max(1, bounds.height));
+                    if (fit < 1) object.set({ scaleX: object.scaleX * fit, scaleY: object.scaleY * fit });
+                    object.set({
+                        originX: 'center', originY: 'center',
+                        left: plan.padding + column * (cellWidth + gap) + cellWidth / 2,
+                        top: plan.padding + row * (cellHeight + gap) + cellHeight / 2,
+                    });
+                    object.setCoords();
+                });
+            });
+            canvas.requestRenderAll();
+            historyManager.save(label);
+            updateCanvasUI();
+            document.getElementById('aiLayoutStatus').textContent = `${label}已完成：${targets.length} 个对象，${columns} 列布局。${plan.rationale ? ` ${plan.rationale}` : ''}`;
+            showToast(`${label}已完成`);
+        }
+
+        function autoLayoutCanvas() {
+            const mode = document.getElementById('aiLayoutMode')?.value || 'grid';
+            applyLayoutPlan({ mode }, '快速智能排版');
+        }
+
+        async function requestAILayout() {
+            const targets = layoutTargets();
+            if (targets.length < 2) return showToast('请至少添加两个未锁定、可见对象');
+            if (window.location.protocol === 'file:') return showToast('AI 排版需要通过 npm start 启动服务');
+            const button = document.getElementById('aiLayoutBtn');
+            const status = document.getElementById('aiLayoutStatus');
+            button.disabled = true;
+            status.textContent = '正在请求 AI 布局建议…';
+            try {
+                const objects = targets.map(object => {
+                    const bounds = object.getBoundingRect(true, true);
+                    return { id: object.id, name: object.name || objectTypeLabel(object), type: object.type, width: Math.round(bounds.width), height: Math.round(bounds.height) };
+                });
+                const result = await postAI('/api/ai/layout', { canvas: { width: canvas.width, height: canvas.height }, objects });
+                applyLayoutPlan(result.plan, 'AI 智能排版');
+            } catch (error) {
+                status.textContent = `AI 排版不可用：${error.message}。你仍可使用“快速排列”。`;
+                showToast('AI 排版未完成，可使用本地快速排列');
             } finally {
                 button.disabled = false;
             }
@@ -2813,7 +3019,7 @@
             if (event.code === 'Space') { isSpacePressed = false; document.body.classList.remove('is-panning'); }
         });
 
-        window.onload = () => { initSidebar(); setupDropZone(); setupViewportControls(); registerBuiltinPlugins(); setupCollaboration(); updateCanvasUI(); };
+        window.onload = () => { initSidebar(); setupDropZone(); setupViewportControls(); registerBuiltinPlugins(); setupCollaboration(); updateAIModeUI(); historyManager.updateUI(); updateCanvasUI(); };
 
     </script>
     <script src="plugins/example-badge-plugin.js"></script>
