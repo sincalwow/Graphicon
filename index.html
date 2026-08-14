@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Graphicon — Professional Vector Workspace</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://unpkg.com/paper@0.12.18/dist/paper-full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -178,6 +179,12 @@
         .collab-members { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
         .collab-member { max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 5px; border-radius: 4px; background: rgba(84, 183, 111, .16); color: #c8f5d4; font-size: 9px; }
         .collab-note { color: #8aa692; font-size: 10px; line-height: 1.45; margin: 8px 0 0; }
+        .geometry-card { border-color: rgba(245, 176, 65, .34); background: linear-gradient(145deg, rgba(115, 74, 24, .22), rgba(43,43,43,.95)); }
+        .geometry-card .panel-head { color: #ffe2a7; }
+        .geometry-note { color: #c2a875; font-size: 10px; line-height: 1.45; margin: 8px 0 0; }
+        .geometry-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .geometry-actions .a-btn { min-height: 34px; font-size: 11px; }
+        .geometry-actions .a-btn:disabled { opacity: .48; cursor: wait; }
 
         .sep { width: 1px; background: #555; height: 20px; margin: 8px 4px; }
 
@@ -575,6 +582,18 @@
                 <button type="button" class="a-btn" onclick="exitNodeEditor()" title="退出节点编辑">完成编辑</button>
             </div>
         </div>
+        <div class="panel-card geometry-card" id="geometryCard">
+            <div class="panel-head"><span><i class="fas fa-vector-square" aria-hidden="true"></i> 路径几何</span><span>Paper.js</span></div>
+            <div class="geometry-actions">
+                <button type="button" class="a-btn" onclick="booleanPath('unite')" title="将两个选中矢量对象合并"><i class="fas fa-object-group" aria-hidden="true"></i> 合并</button>
+                <button type="button" class="a-btn" onclick="booleanPath('subtract')" title="从第一个对象中减去第二个对象"><i class="fas fa-minus" aria-hidden="true"></i> 相减</button>
+                <button type="button" class="a-btn" onclick="booleanPath('intersect')" title="保留两个对象的相交区域"><i class="fas fa-overlap" aria-hidden="true"></i> 相交</button>
+                <button type="button" class="a-btn" onclick="booleanPath('exclude')" title="保留两个对象不重叠的区域"><i class="fas fa-code-branch" aria-hidden="true"></i> 排除</button>
+                <button type="button" class="a-btn" onclick="simplifySelectedPath()" title="减少选中路径的冗余节点并保留轮廓"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 简化路径</button>
+                <button type="button" class="a-btn" onclick="smoothSelectedPath()" title="将选中路径平滑为连续贝塞尔曲线"><i class="fas fa-wave-square" aria-hidden="true"></i> 平滑曲线</button>
+            </div>
+            <p class="geometry-note" id="geometryNote">选择两个矢量对象进行合并、相减、相交或排除。运算在独立的 Paper.js 几何作用域中执行。</p>
+        </div>
         <div class="panel-card" id="color-box" style="display:none">
             <div class="panel-head">色彩管理</div>
 
@@ -644,6 +663,9 @@
         let isSpacePressed = false;
         let isPanning = false;
         let lastPanPosition = null;
+        let geometryBusy = false;
+        let editablePathFrame = null;
+        let pendingEditablePath = null;
         const MIN_ZOOM = 0.2;
         const MAX_ZOOM = 4;
 
@@ -1371,19 +1393,174 @@
             if (typeof path._setPath === 'function') path._setPath(commands);
             else path.set({ path: commands });
             path.setCoords();
-            canvas.requestRenderAll();
-            if (isNodeEditorActive) renderNodeControls(path);
+            pendingEditablePath = path;
+            if (editablePathFrame) return;
+            editablePathFrame = window.requestAnimationFrame(() => {
+                const target = pendingEditablePath;
+                pendingEditablePath = null;
+                editablePathFrame = null;
+                canvas.requestRenderAll();
+                if (isNodeEditorActive && target) renderNodeControls(target);
+            });
         }
 
-        function createEditablePath(nodes, closed = false) {
-            const data = { nodes: nodes.map(point => ({ x: Math.round(point.x), y: Math.round(point.y), c1: null, c2: null })), closed };
+        function createEditablePath(nodes, closed = false, options = {}) {
+            const normalizeControl = control => control ? { x: Math.round(control.x), y: Math.round(control.y) } : null;
+            const data = {
+                nodes: nodes.map(point => ({ x: Math.round(point.x), y: Math.round(point.y), c1: normalizeControl(point.c1), c2: normalizeControl(point.c2) })),
+                closed
+            };
             const path = new fabric.Path(buildEditablePathSvg(data), {
-                fill: closed ? 'rgba(55, 148, 255, .12)' : 'rgba(0,0,0,0)',
-                stroke: '#3794ff', strokeWidth: 3, strokeLineJoin: 'round', strokeLineCap: 'round', objectCaching: false
+                fill: options.fill ?? (closed ? 'rgba(55, 148, 255, .12)' : 'rgba(0,0,0,0)'),
+                stroke: options.stroke ?? '#3794ff', strokeWidth: options.strokeWidth ?? 3,
+                strokeLineJoin: 'round', strokeLineCap: 'round', objectCaching: false
             });
             path.editablePathData = data;
-            prepareUserObject(path, closed ? '闭合贝塞尔路径' : '贝塞尔路径');
+            prepareUserObject(path, options.name || (closed ? '闭合贝塞尔路径' : '贝塞尔路径'));
             return path;
+        }
+
+        function createGeometryScope() {
+            if (!window.paper?.PaperScope) throw new Error('Paper.js 几何引擎未加载，请检查网络后刷新页面');
+            const scope = new paper.PaperScope();
+            scope.setup(new scope.Size(1, 1));
+            return scope;
+        }
+
+        function selectedGeometryObjects(requiredCount = 2) {
+            const objects = getSelectedUserObjects().filter(object => object.type !== 'image' && typeof object.toSVG === 'function');
+            if (objects.length !== requiredCount) {
+                showToast(requiredCount === 1 ? '请选择一个可编辑的矢量对象' : '请选择恰好两个矢量对象');
+                return null;
+            }
+            return objects;
+        }
+
+        function fabricObjectToPaperItem(object, scope) {
+            const imported = scope.project.importSVG(object.toSVG(), { insert: true, expandShapes: true });
+            const item = typeof imported?.reduce === 'function' ? imported.reduce() : imported;
+            if (!item || typeof item.unite !== 'function') throw new Error('该对象无法转换为可布尔运算的矢量路径');
+            return item;
+        }
+
+        function paperPathToEditableNodes(item) {
+            if (item?.className !== 'Path' || !item.segments?.length) return null;
+            return {
+                closed: Boolean(item.closed),
+                nodes: item.segments.map(segment => {
+                    const point = segment.point;
+                    const handleIn = segment.handleIn;
+                    const handleOut = segment.handleOut;
+                    return {
+                        x: point.x, y: point.y,
+                        c1: handleIn?.length ? { x: point.x + handleIn.x, y: point.y + handleIn.y } : null,
+                        c2: handleOut?.length ? { x: point.x + handleOut.x, y: point.y + handleOut.y } : null,
+                    };
+                })
+            };
+        }
+
+        function addPaperResult(item, scope, sourceObjects, operationName) {
+            const editable = paperPathToEditableNodes(item);
+            let result;
+            if (editable && editable.nodes.length >= 2) {
+                const source = sourceObjects[0];
+                result = createEditablePath(editable.nodes, editable.closed, {
+                    name: operationName, fill: source.fill || 'rgba(55, 148, 255, .18)',
+                    stroke: source.stroke || '#3794ff', strokeWidth: source.strokeWidth || 3,
+                });
+            } else {
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg">${item.exportSVG({ asString: true })}</svg>`;
+                fabric.loadSVGFromString(svg, (objects, options) => {
+                    result = fabric.util.groupSVGElements(objects, options);
+                });
+                if (!result) throw new Error('几何结果无法转换回编辑器路径');
+                prepareUserObject(result, operationName);
+                result.set({ objectCaching: false });
+            }
+            sourceObjects.forEach(object => canvas.remove(object));
+            canvas.add(result);
+            canvas.setActiveObject(result);
+            canvas.requestRenderAll();
+            historyManager.save();
+            updateCanvasUI();
+            return result;
+        }
+
+        function booleanPath(operation) {
+            if (geometryBusy) return;
+            const objects = selectedGeometryObjects(2);
+            if (!objects) return;
+            const labels = { unite: '路径合并', subtract: '路径相减', intersect: '路径相交', exclude: '路径排除' };
+            if (!labels[operation]) return;
+            geometryBusy = true;
+            document.getElementById('geometryNote').textContent = '正在计算路径几何…';
+            try {
+                exitNodeEditor();
+                const scope = createGeometryScope();
+                const first = fabricObjectToPaperItem(objects[0], scope);
+                const second = fabricObjectToPaperItem(objects[1], scope);
+                const result = first[operation](second, { insert: false, trace: true });
+                if (!result || !result.bounds?.width || !result.bounds?.height) throw new Error('运算没有产生可见的路径结果');
+                addPaperResult(result, scope, objects, labels[operation]);
+                showToast(`${labels[operation]}完成`);
+            } catch (error) {
+                console.error('路径布尔运算失败', error);
+                showToast(`路径运算失败：${error.message || '未知错误'}`);
+            } finally {
+                geometryBusy = false;
+                document.getElementById('geometryNote').textContent = '选择两个矢量对象进行合并、相减、相交或排除。运算在独立的 Paper.js 几何作用域中执行。';
+            }
+        }
+
+        function smoothSelectedPath() {
+            if (geometryBusy) return;
+            const objects = selectedGeometryObjects(1);
+            if (!objects) return;
+            geometryBusy = true;
+            document.getElementById('geometryNote').textContent = '正在平滑贝塞尔曲线…';
+            try {
+                exitNodeEditor();
+                const source = objects[0];
+                const scope = createGeometryScope();
+                const item = fabricObjectToPaperItem(source, scope);
+                if (typeof item.smooth !== 'function') throw new Error('该对象不支持曲线平滑');
+                item.smooth({ type: 'catmull-rom', factor: 0.5 });
+                addPaperResult(item, scope, [source], '平滑贝塞尔路径');
+                showToast('已平滑贝塞尔曲线');
+            } catch (error) {
+                console.error('路径平滑失败', error);
+                showToast(`路径平滑失败：${error.message || '未知错误'}`);
+            } finally {
+                geometryBusy = false;
+                document.getElementById('geometryNote').textContent = '选择两个矢量对象进行合并、相减、相交或排除。运算在独立的 Paper.js 几何作用域中执行。';
+            }
+        }
+
+        function simplifySelectedPath() {
+            if (geometryBusy) return;
+            const objects = selectedGeometryObjects(1);
+            if (!objects) return;
+            geometryBusy = true;
+            document.getElementById('geometryNote').textContent = '正在简化贝塞尔节点…';
+            try {
+                exitNodeEditor();
+                const source = objects[0];
+                const scope = createGeometryScope();
+                const item = fabricObjectToPaperItem(source, scope);
+                if (typeof item.simplify !== 'function') throw new Error('该对象不支持路径简化');
+                const before = item.segments?.length || 0;
+                item.simplify(2.5);
+                const after = item.segments?.length || 0;
+                addPaperResult(item, scope, [source], '简化贝塞尔路径');
+                showToast(`路径已简化：${before} → ${after} 个节点`);
+            } catch (error) {
+                console.error('路径简化失败', error);
+                showToast(`路径简化失败：${error.message || '未知错误'}`);
+            } finally {
+                geometryBusy = false;
+                document.getElementById('geometryNote').textContent = '选择两个矢量对象进行合并、相减、相交或排除。运算在独立的 Paper.js 几何作用域中执行。';
+            }
         }
 
         function clearPenPreview() {

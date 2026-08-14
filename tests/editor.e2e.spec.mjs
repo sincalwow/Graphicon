@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 async function appReady(page) {
   await page.goto('/');
-  await page.waitForFunction(() => Boolean(window.Graphicon && document.querySelector('#pluginTools .plugin-action')));
+  await page.waitForFunction(() => Boolean(window.Graphicon && window.paper && document.querySelector('#pluginTools .plugin-action')));
 }
 
 async function addAsset(page, index = 0) {
@@ -32,7 +32,7 @@ test.describe('Graphicon professional editor', () => {
 
   test('creates an editable pen path and toggles a Bézier node', async ({ page }) => {
     await appReady(page);
-    const result = await page.evaluate(() => {
+    const result = await page.evaluate(async () => {
       const path = createEditablePath([
         { x: 120, y: 150 },
         { x: 330, y: 160 },
@@ -43,6 +43,7 @@ test.describe('Graphicon professional editor', () => {
       enterNodeEditor(path);
       selectedNodeIndex = 0;
       toggleSelectedNodeCurve();
+      await new Promise(resolve => requestAnimationFrame(resolve));
       return {
         editable: Boolean(path.editablePathData),
         nodes: path.editablePathData.nodes.length,
@@ -55,6 +56,61 @@ test.describe('Graphicon professional editor', () => {
     expect(result).toMatchObject({ editable: true, nodes: 3, hasC1: true, hasC2: true, controlCount: 5 });
     expect(result.svgPath).toContain('C');
     await expect(page.locator('#pathModeBadge')).toHaveText('3 个节点');
+  });
+
+  test('runs Paper.js boolean operations and exports the editable union as SVG', async ({ page }) => {
+    await appReady(page);
+    const operations = ['subtract', 'intersect', 'exclude', 'unite'];
+    for (const operation of operations) {
+      const result = await page.evaluate(operationName => {
+        canvas.clear();
+        const first = new fabric.Rect({ left: 180, top: 210, width: 190, height: 140, fill: '#ff725c', stroke: '#d84d39', strokeWidth: 3 });
+        const second = new fabric.Rect({ left: 285, top: 260, width: 190, height: 140, fill: '#4c9aff', stroke: '#2478d4', strokeWidth: 3 });
+        prepareUserObject(first, '路径 A');
+        prepareUserObject(second, '路径 B');
+        canvas.add(first, second);
+        canvas.setActiveObject(new fabric.ActiveSelection([first, second], { canvas }));
+        booleanPath(operationName);
+        const active = canvas.getActiveObject();
+        return { paperLoaded: Boolean(window.paper), count: canvas.getObjects().filter(object => !object.excludeFromExport && !object.isGrid).length, editable: Boolean(active?.editablePathData), name: active?.name };
+      }, operation);
+      expect(result).toMatchObject({ paperLoaded: true, count: 1 });
+      expect(result.name).toContain('路径');
+      if (operation === 'unite') expect(result.editable).toBe(true);
+    }
+    await page.selectOption('#exportFormat', 'svg');
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: '导出设计稿' }).click();
+    const download = await downloadPromise;
+    const stream = await download.createReadStream();
+    let svg = '';
+    for await (const chunk of stream) svg += chunk;
+    expect(svg).toContain('<path');
+  });
+
+  test('simplifies and smooths editable Bézier paths while preserving edit metadata', async ({ page }) => {
+    await appReady(page);
+    const result = await page.evaluate(() => {
+      const path = createEditablePath([
+        { x: 150, y: 230 }, { x: 220, y: 155 }, { x: 305, y: 205 },
+        { x: 340, y: 290 }, { x: 285, y: 360 }, { x: 190, y: 330 },
+      ], true, { name: '待优化路径' });
+      canvas.add(path);
+      canvas.setActiveObject(path);
+      smoothSelectedPath();
+      const smoothed = canvas.getActiveObject();
+      simplifySelectedPath();
+      const simplified = canvas.getActiveObject();
+      return {
+        smoothEditable: Boolean(smoothed?.editablePathData),
+        simplifyEditable: Boolean(simplified?.editablePathData),
+        nodeCount: simplified?.editablePathData?.nodes?.length || 0,
+        svg: simplified?.toSVG() || '',
+      };
+    });
+    expect(result).toMatchObject({ smoothEditable: true, simplifyEditable: true });
+    expect(result.nodeCount).toBeGreaterThanOrEqual(2);
+    expect(result.svg).toContain('<path');
   });
 
   test('exports PNG, JPG, WebP and SVG with expected download payloads', async ({ page }) => {
