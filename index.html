@@ -34,7 +34,7 @@
         /* 左侧侧边栏 */
         .sidebar {
             width: 320px; background: var(--bg-sidebar); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 20; flex-shrink: 0;
+            display: flex; flex-direction: column; z-index: 20; flex-shrink: 0; overflow: hidden;
             box-shadow: 5px 0 15px rgba(0,0,0,0.3);
         }
         .logo-area {
@@ -76,9 +76,23 @@
         }
         .btn-main:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.4); }
 
-        .library-container { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .library-section {
+            flex: 0 0 clamp(260px, 38vh, 380px); min-height: 260px; display: flex; flex-direction: column;
+            background: var(--bg-sidebar); border-bottom: 1px solid var(--border);
+        }
+        .library-heading {
+            flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+            padding: 10px 12px; background: #202020; border-bottom: 1px solid #3b3b3b;
+        }
+        .library-heading-title { color: #f4f4f4; font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+        .library-heading-title i { color: var(--accent); margin-right: 6px; }
+        .library-heading-meta { color: #969696; font-size: 10px; white-space: nowrap; }
+        .library-container { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: 12px; scrollbar-gutter: stable; }
         .library-container::-webkit-scrollbar { width: 6px; }
         .library-container::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+        .secondary-sidebar-panels { flex: 1 1 auto; min-height: 0; overflow-y: auto; background: #202020; }
+        .secondary-sidebar-panels::-webkit-scrollbar { width: 6px; }
+        .secondary-sidebar-panels::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
         .accordion-item { border-bottom: 1px solid #333; }
         .accordion-header {
@@ -442,31 +456,39 @@
             </div>
             <input type="file" id="projectIn" accept="application/json,.graphicon,.json" style="display:none">
         </div>
-        <div class="panel-card ai-card" aria-labelledby="ai-title">
-            <div class="panel-head" id="ai-title"><span><i class="fas fa-sparkles" aria-hidden="true"></i> AI 矢量助手</span><span>Beta</span></div>
-            <textarea id="aiPrompt" class="std-input ai-prompt" maxlength="800" placeholder="例如：创建一枚极简蓝色鲸鱼徽标，圆润线条，透明背景"></textarea>
-            <div class="ai-mode-row">
-                <select id="aiGenerationMode" class="select-input" onchange="updateAIModeUI()"><option value="svg">生成可编辑 SVG</option><option value="image">文生图</option></select>
-                <select id="aiImageSize" class="select-input" aria-label="文生图尺寸"><option value="1024x1024">1024 × 1024</option><option value="1024x1536">1024 × 1536</option><option value="1536x1024">1536 × 1024</option></select>
+        <section class="library-section" aria-labelledby="library-title">
+            <div class="library-heading">
+                <span class="library-heading-title" id="library-title"><i class="fas fa-shapes" aria-hidden="true"></i>图标素材库</span>
+                <span class="library-heading-meta">6 个分类 · 点击添加</span>
             </div>
-            <div class="ai-action"><button type="button" id="aiGenerateBtn" class="ai-generate-btn" onclick="generateAIAsset()"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 生成 SVG</button></div>
-            <p class="ai-status" id="aiStatus">SVG 使用 AI_API_KEY；文生图需要兼容 Images API 的 AI_IMAGE_BASE / AI_IMAGE_MODEL。密钥不会写入浏览器或项目文件。</p>
-            <p class="history-status" id="historyStatus"><strong>历史记录</strong> · 撤销 0 · 重做 0</p>
+            <div class="library-container" id="lib-root" aria-label="可添加到画布的图标素材"></div>
+        </section>
+        <div class="secondary-sidebar-panels" aria-label="高级工作面板">
+            <div class="panel-card ai-card" aria-labelledby="ai-title">
+                <div class="panel-head" id="ai-title"><span><i class="fas fa-sparkles" aria-hidden="true"></i> AI 矢量助手</span><span>Beta</span></div>
+                <textarea id="aiPrompt" class="std-input ai-prompt" maxlength="800" placeholder="例如：创建一枚极简蓝色鲸鱼徽标，圆润线条，透明背景"></textarea>
+                <div class="ai-mode-row">
+                    <select id="aiGenerationMode" class="select-input" onchange="updateAIModeUI()"><option value="svg">生成可编辑 SVG</option><option value="image">文生图</option></select>
+                    <select id="aiImageSize" class="select-input" aria-label="文生图尺寸"><option value="1024x1024">1024 × 1024</option><option value="1024x1536">1024 × 1536</option><option value="1536x1024">1536 × 1024</option></select>
+                </div>
+                <div class="ai-action"><button type="button" id="aiGenerateBtn" class="ai-generate-btn" onclick="generateAIAsset()"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 生成 SVG</button></div>
+                <p class="ai-status" id="aiStatus">SVG 使用 AI_API_KEY；文生图需要兼容 Images API 的 AI_IMAGE_BASE / AI_IMAGE_MODEL。密钥不会写入浏览器或项目文件。</p>
+                <p class="history-status" id="historyStatus"><strong>历史记录</strong> · 撤销 0 · 重做 0</p>
+            </div>
+            <div class="panel-card plugins-card" aria-labelledby="plugins-title">
+                <div class="panel-head" id="plugins-title"><span><i class="fas fa-puzzle-piece" aria-hidden="true"></i> 插件工作台</span><span id="pluginCount">0</span></div>
+                <div id="pluginTools" class="plugin-list" aria-label="已安装插件操作"></div>
+                <p class="plugin-note">仅安装可信插件。外部脚本可调用 <code>Graphicon.registerPlugin()</code> 注册工具或滤镜。</p>
+            </div>
+            <div class="panel-card collab-card" aria-labelledby="collab-title">
+                <div class="panel-head" id="collab-title"><span><i class="fas fa-users" aria-hidden="true"></i> 实时协作</span><span id="collabRevision">离线</span></div>
+                <div class="collab-form"><input id="collabRoom" class="std-input" maxlength="48" placeholder="房间号，例如 team-logo"><button type="button" id="collabConnectBtn" class="collab-btn" onclick="toggleCollaboration()">加入</button></div>
+                <div class="collab-form" style="grid-template-columns:1fr; margin-top:7px"><input id="collabName" class="std-input" maxlength="32" placeholder="显示名称"></div>
+                <div class="collab-meta"><span id="collabStatus" class="collab-status">未加入协作房间</span></div>
+                <div id="collabMembers" class="collab-members"></div>
+                <p class="collab-note">房间采用最后写入快照同步。当前服务使用单实例内存房间，重启后会清空；生产环境请部署到持续运行的单一服务实例。</p>
+            </div>
         </div>
-        <div class="panel-card plugins-card" aria-labelledby="plugins-title">
-            <div class="panel-head" id="plugins-title"><span><i class="fas fa-puzzle-piece" aria-hidden="true"></i> 插件工作台</span><span id="pluginCount">0</span></div>
-            <div id="pluginTools" class="plugin-list" aria-label="已安装插件操作"></div>
-            <p class="plugin-note">仅安装可信插件。外部脚本可调用 <code>Graphicon.registerPlugin()</code> 注册工具或滤镜。</p>
-        </div>
-        <div class="panel-card collab-card" aria-labelledby="collab-title">
-            <div class="panel-head" id="collab-title"><span><i class="fas fa-users" aria-hidden="true"></i> 实时协作</span><span id="collabRevision">离线</span></div>
-            <div class="collab-form"><input id="collabRoom" class="std-input" maxlength="48" placeholder="房间号，例如 team-logo"><button type="button" id="collabConnectBtn" class="collab-btn" onclick="toggleCollaboration()">加入</button></div>
-            <div class="collab-form" style="grid-template-columns:1fr; margin-top:7px"><input id="collabName" class="std-input" maxlength="32" placeholder="显示名称"></div>
-            <div class="collab-meta"><span id="collabStatus" class="collab-status">未加入协作房间</span></div>
-            <div id="collabMembers" class="collab-members"></div>
-            <p class="collab-note">房间采用最后写入快照同步。当前服务使用单实例内存房间，重启后会清空；生产环境请部署到持续运行的单一服务实例。</p>
-        </div>
-        <div class="library-container" id="lib-root"></div>
     </div>
     <div class="workspace">
         <div class="float-tools">

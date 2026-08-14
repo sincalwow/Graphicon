@@ -22,6 +22,29 @@ async function readCanvas(page) {
 }
 
 test.describe('Graphicon professional editor', () => {
+  test('keeps the six-category icon library visible before advanced panels and adds an icon', async ({ page }) => {
+    await appReady(page);
+    await expect(page.locator('.library-heading')).toContainText('图标素材库');
+    await expect(page.locator('#lib-root .accordion-header')).toHaveCount(6);
+    const layout = await page.evaluate(() => {
+      const library = document.querySelector('.library-section')?.getBoundingClientRect();
+      const aiPanel = document.querySelector('.ai-card')?.getBoundingClientRect();
+      return {
+        libraryTop: library?.top,
+        libraryBottom: library?.bottom,
+        aiTop: aiPanel?.top,
+        viewportHeight: window.innerHeight,
+      };
+    });
+    expect(layout.libraryTop).toBeGreaterThanOrEqual(0);
+    expect(layout.libraryBottom).toBeLessThanOrEqual(layout.viewportHeight);
+    expect(layout.aiTop).toBeGreaterThan(layout.libraryTop);
+    await page.locator('#lib-root .accordion-header').nth(1).click();
+    await expect(page.locator('#lib-root .accordion-content.show .asset-item').first()).toBeVisible();
+    await page.locator('#lib-root .accordion-content.show .asset-item').first().click();
+    await expect.poll(() => readCanvas(page)).toMatchObject({ count: 1, active: '图标路径' });
+  });
+
   test('registers bundled and external plugins, then invokes an external tool', async ({ page }) => {
     await appReady(page);
     await expect(page.locator('#pluginCount')).toHaveText('3 个');
