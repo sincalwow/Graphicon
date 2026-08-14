@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Graphic Code Pro - 智能设计 (吸附增强版)</title>
+    <title>Graphicon — Professional Vector Workspace</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -134,6 +134,30 @@
         .tool-icon.save-png:hover { background: rgba(76, 175, 80, 0.1); }
         .tool-icon.save-svg { color: #FF9800; }
         .tool-icon.save-svg:hover { background: rgba(255, 152, 0, 0.1); }
+        .tool-icon.active { color: #fff; background: var(--accent); box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 4px 12px rgba(24,160,251,.32); }
+        .workspace.pen-mode .canvas-container, .workspace.pen-mode .upper-canvas { cursor: crosshair !important; }
+        .path-editor-card { display: none; }
+        .path-editor-card.show { display: block; }
+        .path-hint { color: #aab1ba; font-size: 11px; line-height: 1.55; margin: 0 0 10px; }
+        .path-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+        .path-controls .a-btn { font-size: 11px; padding: 8px 5px; }
+        .path-mode-badge { color: var(--accent-light); font-size: 10px; font-weight: 700; }
+        .node-control-anchor { filter: drop-shadow(0 1px 2px rgba(0,0,0,.65)); }
+        .node-control-handle { filter: drop-shadow(0 1px 2px rgba(0,0,0,.65)); }
+        .export-card { border-color: rgba(76, 175, 80, .26); }
+        .export-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .export-option { display: grid; gap: 5px; }
+        .export-option label { color: #aeb7c2; font-size: 10px; font-weight: 700; letter-spacing: .02em; }
+        .export-btn { width: 100%; margin-top: 10px; min-height: 36px; border: 0; border-radius: 6px; background: linear-gradient(135deg, #3e9460, #24894f); color: #fff; font-weight: 700; cursor: pointer; }
+        .export-btn:hover { filter: brightness(1.1); }
+        .export-note { color: #7d8794; font-size: 10px; line-height: 1.45; margin: 9px 0 0; }
+        .ai-card { margin: 10px 10px 0; border: 1px solid rgba(169, 118, 255, .34); background: linear-gradient(145deg, rgba(124, 77, 255, .16), rgba(20, 21, 28, .75)); }
+        .ai-card .panel-head { color: #d8c7ff; }
+        .ai-prompt { min-height: 58px; resize: vertical; line-height: 1.45; }
+        .ai-action { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+        .ai-generate-btn { flex: 1; min-height: 34px; border: 0; border-radius: 6px; cursor: pointer; color: #fff; font-weight: 700; background: linear-gradient(135deg, #7652e9, #b060d9); }
+        .ai-generate-btn:disabled { cursor: wait; opacity: .62; }
+        .ai-status { color: #9f91c8; font-size: 10px; line-height: 1.35; margin: 8px 0 0; }
 
         .sep { width: 1px; background: #555; height: 20px; margin: 8px 4px; }
 
@@ -263,12 +287,99 @@
             line-height: 1.5; pointer-events: none; opacity: 0.7;
         }
         .hint strong { color: var(--accent); font-weight: 600; }
+
+        /* Figma-inspired professional workspace */
+        :root {
+            --bg-body: #1e1e1e;
+            --bg-sidebar: #242424;
+            --bg-tool: #2d2d2d;
+            --panel-raised: #303030;
+            --accent: #0d99ff;
+            --accent-light: #64b5ff;
+            --text-main: #f5f5f5;
+            --text-sub: #a7a7a7;
+            --border: #3a3a3a;
+            --border-strong: #545454;
+        }
+        body { background: #1e1e1e; letter-spacing: -.01em; }
+        .sidebar, .props-panel { background: #242424; box-shadow: none; }
+        .sidebar { width: 282px; border-right-color: #3b3b3b; }
+        .props-panel { width: 290px; padding: 12px; gap: 10px; border-left-color: #3b3b3b; }
+        .logo-area {
+            height: 52px; padding: 0 14px; font-size: 13px; letter-spacing: .08em; font-weight: 800; background: #242424;
+            border-bottom-color: #3b3b3b; gap: 9px;
+        }
+        .logo-area::after { display: none; }
+        .logo-icon { font-size: 16px; color: #0d99ff; }
+        .workspace-edition { margin-left: auto; padding: 3px 5px; border: 1px solid #4a4a4a; border-radius: 4px; color: #a9a9a9; font-size: 9px; letter-spacing: .09em; }
+        .text-tool-box, .project-tools { padding: 12px; background: #242424; border-bottom-color: #3b3b3b; }
+        .upload-box { padding: 8px 12px 12px; border: 0; }
+        .panel-head { color: #b9b9b9; letter-spacing: .03em; text-transform: uppercase; font-size: 10px; }
+        .std-input, .size-input, .select-input {
+            background: #303030; border-color: #464646; border-radius: 5px; box-shadow: inset 0 1px rgba(255,255,255,.02);
+        }
+        .std-input:hover, .size-input:hover, .select-input:hover { border-color: #5e5e5e; }
+        .std-input:focus, .size-input:focus, .select-input:focus { border-color: #0d99ff; box-shadow: 0 0 0 1px #0d99ff; }
+        .btn-main { border-radius: 6px; min-height: 36px; padding: 9px; background: #0d99ff; box-shadow: none; font-size: 12px; }
+        .btn-main:hover { background: #32a8ff; transform: none; box-shadow: none; }
+        .project-tool-row { gap: 6px; }
+        .project-btn { min-height: 32px; background: #303030; border-color: #454545; border-radius: 5px; }
+        .project-btn:hover { color: #fff; background: #3b3b3b; border-color: #6b6b6b; transform: none; }
+        .accordion-item { border-bottom-color: #383838; }
+        .accordion-header { padding: 11px 13px; background: #242424; letter-spacing: .03em; text-transform: none; }
+        .accordion-header:hover { background: #2b2b2b; }
+        .accordion-header.active { color: #f5f5f5; border-left: 2px solid #0d99ff; background: #2a2a2a; }
+        .accordion-content { padding: 10px 12px; background: #242424; }
+        .assets-grid { grid-template-columns: repeat(6, 1fr); gap: 6px; }
+        .asset-item { background: #303030; border-radius: 5px; }
+        .asset-item:hover { background: #3a3a3a; border-color: #0d99ff; transform: none; box-shadow: 0 0 0 1px rgba(13,153,255,.26); }
+        .workspace { background: radial-gradient(circle at 50% 40%, #303030 0, #252525 44%, #1d1d1d 100%); }
+        .workspace::before, .workspace::after { content: ''; position: absolute; pointer-events: none; z-index: 1; opacity: .27; }
+        .workspace::before { top: 0; left: 0; right: 0; height: 28px; border-bottom: 1px solid #444; background: repeating-linear-gradient(90deg, transparent 0 9px, rgba(255,255,255,.28) 9px 10px, transparent 10px 50px); }
+        .workspace::after { top: 0; bottom: 0; left: 0; width: 28px; border-right: 1px solid #444; background: repeating-linear-gradient(0deg, transparent 0 9px, rgba(255,255,255,.28) 9px 10px, transparent 10px 50px); }
+        .canvas-bg { border: 1px solid rgba(255,255,255,.11); box-shadow: 0 16px 42px rgba(0,0,0,.48); z-index: 2; }
+        .float-tools {
+            top: 12px; padding: 5px 8px; gap: 2px; border-radius: 8px; background: rgba(43,43,43,.96);
+            border-color: #565656; box-shadow: 0 6px 20px rgba(0,0,0,.38); z-index: 150;
+        }
+        .tool-icon { width: 32px; height: 32px; border-radius: 5px; font-size: 14px; }
+        .tool-icon:hover { transform: none; background: #414141; color: #fff; }
+        .tool-icon::after { top: calc(100% + 8px); background: #111; border: 1px solid #555; font-size: 10px; z-index: 200; }
+        .sep { margin: 6px 5px; background: #595959; }
+        .panel-card { background: #2b2b2b; border-radius: 7px; padding: 12px; border-color: #3e3e3e; box-shadow: inset 0 1px rgba(255,255,255,.02); }
+        .panel-card:hover { border-color: #505050; }
+        .a-btn { background: #363636; border: 1px solid #484848; border-radius: 5px; color: #d9d9d9; }
+        .a-btn:hover { background: #454545; border-color: #666; }
+        .view-controls { left: 42px; bottom: 18px; padding: 4px; border-radius: 7px; background: rgba(43,43,43,.94); border-color: #565656; box-shadow: 0 5px 14px rgba(0,0,0,.34); z-index: 130; }
+        .view-btn { border-radius: 4px; width: 29px; height: 29px; }
+        .view-btn:hover { background: #454545; }
+        .status-bar { bottom: 17px; border-radius: 7px; padding: 7px 12px; background: rgba(43,43,43,.92); border-color: #565656; z-index: 130; gap: 12px; }
+        .grid-toggle { right: 16px; bottom: 18px; padding: 7px 10px; border-radius: 7px; background: rgba(43,43,43,.94); border-color: #565656; z-index: 130; }
+        .grid-toggle:hover { background: #3b3b3b; }
+        .layers-card { min-height: 190px; }
+        .layers-list { gap: 3px; }
+        .layer-row { min-height: 34px; border-radius: 5px; background: #303030; }
+        .layer-row:hover { background: #3a3a3a; }
+        .layer-row.active { background: rgba(13,153,255,.17); border-color: #0d99ff; }
+        .layer-head-btn:hover, .layer-action-btn:hover { background: #4b4b4b; }
+        .check-line { color: #c2c2c2; }
+        .export-card { background: linear-gradient(150deg, rgba(45,68,56,.84), #2b2b2b 58%); }
+        .ai-card { border-radius: 7px; }
+        .hint { color: #848484; font-size: 14px; }
+        #toast { background: #0d99ff; border-radius: 6px; padding: 10px 15px; font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+        @media (max-width: 1100px) {
+            .sidebar { width: 244px; }
+            .props-panel { width: 244px; }
+            .float-tools { padding: 4px 5px; }
+            .tool-icon { width: 29px; height: 29px; }
+        }
+
     </style>
 </head>
 
 <body>
     <div class="sidebar">
-        <div class="logo-area"><i class="fas fa-shapes logo-icon"></i> &nbsp; GRAPHIC PRO</div>
+        <div class="logo-area"><i class="fas fa-shapes logo-icon" aria-hidden="true"></i><span>GRAPHICON</span><span class="workspace-edition">VECTOR</span></div>
 
         <div class="text-tool-box">
             <div class="panel-head" style="color:#ddd; margin-bottom:10px;">文字工坊</div>
@@ -296,6 +407,12 @@
             </div>
             <input type="file" id="projectIn" accept="application/json,.graphicon,.json" style="display:none">
         </div>
+        <div class="panel-card ai-card" aria-labelledby="ai-title">
+            <div class="panel-head" id="ai-title"><span><i class="fas fa-sparkles" aria-hidden="true"></i> AI 矢量助手</span><span>Beta</span></div>
+            <textarea id="aiPrompt" class="std-input ai-prompt" maxlength="800" placeholder="例如：创建一枚极简蓝色鲸鱼徽标，圆润线条，透明背景"></textarea>
+            <div class="ai-action"><button type="button" id="aiGenerateBtn" class="ai-generate-btn" onclick="generateAIVector()"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> 生成 SVG</button></div>
+            <p class="ai-status" id="aiStatus">需通过本地或部署服务器配置 AI_API_KEY；密钥不会写入浏览器或项目文件。</p>
+        </div>
         <div class="library-container" id="lib-root"></div>
     </div>
     <div class="workspace">
@@ -307,14 +424,18 @@
             <button class="tool-icon delete" onclick="act('del')" title="删除 (Delete)"><i class="fas fa-trash"></i></button>
             <button class="tool-icon" onclick="act('copy')" title="复制 (Ctrl+C)"><i class="fas fa-copy"></i></button>
             <div class="sep"></div>
+            <button type="button" class="tool-icon" id="btnPen" onclick="togglePenTool()" title="钢笔路径 (P)" aria-label="钢笔路径"><i class="fas fa-pen-nib" aria-hidden="true"></i></button>
+            <button type="button" class="tool-icon" id="btnNode" onclick="toggleNodeEditor()" title="节点与贝塞尔编辑 (N)" aria-label="节点与贝塞尔编辑"><i class="fas fa-bezier-curve" aria-hidden="true"></i></button>
+            <div class="sep"></div>
             <button class="tool-icon" onclick="act('group')" title="成组 (Ctrl+G)"><i class="fas fa-object-group"></i></button>
             <button class="tool-icon" onclick="act('ungroup')" title="解组 (Ctrl+Shift+G)"><i class="fas fa-object-ungroup"></i></button>
             <div class="sep"></div>
             <button class="tool-icon" onclick="act('top')" title="置顶"><i class="fas fa-arrow-up"></i></button>
             <button class="tool-icon" onclick="act('bottom')" title="置底"><i class="fas fa-arrow-down"></i></button>
             <div class="sep"></div>
-            <button class="tool-icon save-png" onclick="act('savePng')" title="导出透明PNG"><i class="fas fa-image"></i></button>
-            <button class="tool-icon save-svg" onclick="act('saveSvg')" title="导出SVG矢量图"><i class="fas fa-bezier-curve"></i></button>
+            <button class="tool-icon save-png" onclick="act('savePng')" title="快速导出透明 PNG" aria-label="快速导出透明 PNG"><i class="fas fa-image" aria-hidden="true"></i></button>
+            <button class="tool-icon save-svg" onclick="act('saveSvg')" title="快速导出 SVG" aria-label="快速导出 SVG"><i class="fas fa-bezier-curve" aria-hidden="true"></i></button>
+            <button type="button" class="tool-icon" onclick="openExportPanel()" title="导出中心" aria-label="导出中心"><i class="fas fa-file-export" aria-hidden="true"></i></button>
         </div>
 
         <div class="canvas-bg">
@@ -373,6 +494,15 @@
             </div>
             <div class="canvas-actions"><button type="button" class="apply-btn" onclick="applyCanvasSize()">应用画布尺寸</button></div>
         </div>
+        <div class="panel-card export-card" id="exportCard">
+            <div class="panel-head"><span>导出中心</span><span>边界裁切</span></div>
+            <div class="export-grid">
+                <div class="export-option"><label for="exportFormat">格式</label><select id="exportFormat" class="select-input"><option value="png">PNG（透明）</option><option value="jpg">JPG（白底）</option><option value="webp">WebP（透明）</option><option value="svg">SVG（矢量）</option><option value="project">Graphicon 项目</option></select></div>
+                <div class="export-option"><label for="exportScale">位图倍率</label><select id="exportScale" class="select-input"><option value="1">1×</option><option value="2" selected>2×</option><option value="3">3×</option><option value="4">4×</option></select></div>
+            </div>
+            <button type="button" class="export-btn" onclick="exportFromPanel()"><i class="fas fa-download" aria-hidden="true"></i> 导出设计稿</button>
+            <p class="export-note">PNG、JPG、WebP 将按对象边界裁切；SVG 保留矢量路径；项目文件可在 Graphicon 中继续编辑。</p>
+        </div>
         <div class="panel-card">
             <div class="panel-head">对齐与分布</div>
             <label class="field-label" for="layoutReference">对齐参照</label>
@@ -402,6 +532,16 @@
             <input type="range" id="opacityRange" style="width:100%; accent-color:var(--accent)" min="0" max="1" step="0.05" value="1" oninput="setOpacity(this.value)">
         </div>
 
+        <div class="panel-card path-editor-card" id="pathEditorCard">
+            <div class="panel-head"><span>路径编辑</span><span id="pathModeBadge" class="path-mode-badge">节点模式</span></div>
+            <p class="path-hint" id="pathEditorHint">选择由钢笔创建的路径后，点击“节点编辑”。拖动锚点调整轮廓，双击锚点切换直线/贝塞尔曲线。</p>
+            <div class="path-controls">
+                <button type="button" class="a-btn" onclick="toggleSelectedNodeCurve()" title="切换所选节点的直线或曲线">切换曲线</button>
+                <button type="button" class="a-btn" onclick="finishPenPath(true)" title="闭合正在绘制的路径">闭合路径</button>
+                <button type="button" class="a-btn" onclick="deleteSelectedNode()" title="删除当前节点">删除节点</button>
+                <button type="button" class="a-btn" onclick="exitNodeEditor()" title="退出节点编辑">完成编辑</button>
+            </div>
+        </div>
         <div class="panel-card" id="color-box" style="display:none">
             <div class="panel-head">色彩管理</div>
 
@@ -462,6 +602,12 @@
         let toastTimer = null;
         let gridGroup = null;
         let nextObjectId = 1;
+        let isPenToolActive = false;
+        let isNodeEditorActive = false;
+        let penPoints = [];
+        let penPreview = null;
+        let nodeControls = [];
+        let selectedNodeIndex = null;
         let isSpacePressed = false;
         let isPanning = false;
         let lastPanPosition = null;
@@ -480,7 +626,7 @@
             }
 
             // 保存时包含的额外属性
-            get saveProps() { return ['selectable', 'evented', 'isGrid', 'excludeFromExport', 'id', 'name', 'locked', 'filterId']; }
+            get saveProps() { return ['selectable', 'evented', 'isGrid', 'excludeFromExport', 'id', 'name', 'locked', 'editablePathData', 'filterId']; }
 
             save() {
                 if (this.locked) return;
@@ -638,7 +784,7 @@
         }
 
         canvas.on('object:moving', (e) => {
-            if (!snapEnabled) return;
+            if (!snapEnabled || e.target?.isNodeControl || isPenToolActive) return;
 
             const target = e.target;
             clearGuides();
@@ -870,6 +1016,290 @@
             clearGuides();
         });
 
+        function pointDistance(a, b) {
+            return Math.hypot(a.x - b.x, a.y - b.y);
+        }
+
+        function buildEditablePathCommands(data) {
+            const nodes = data?.nodes || [];
+            if (!nodes.length) return [];
+            const commands = [['M', nodes[0].x, nodes[0].y]];
+            const segmentCount = data.closed ? nodes.length : nodes.length - 1;
+            for (let index = 0; index < segmentCount; index++) {
+                const start = nodes[index];
+                const end = nodes[(index + 1) % nodes.length];
+                if (start.c2 || end.c1) {
+                    const c2 = start.c2 || { x: start.x, y: start.y };
+                    const c1 = end.c1 || { x: end.x, y: end.y };
+                    commands.push(['C', c2.x, c2.y, c1.x, c1.y, end.x, end.y]);
+                } else {
+                    commands.push(['L', end.x, end.y]);
+                }
+            }
+            if (data.closed) commands.push(['Z']);
+            return commands;
+        }
+
+        function buildEditablePathSvg(data) {
+            return buildEditablePathCommands(data).map(command => command[0] === 'Z' ? 'Z' : `${command[0]} ${command.slice(1).join(' ')}`).join(' ');
+        }
+
+        function refreshEditablePath(path) {
+            if (!path?.editablePathData) return;
+            const commands = buildEditablePathCommands(path.editablePathData);
+            if (typeof path._setPath === 'function') path._setPath(commands);
+            else path.set({ path: commands });
+            path.setCoords();
+            canvas.requestRenderAll();
+            if (isNodeEditorActive) renderNodeControls(path);
+        }
+
+        function createEditablePath(nodes, closed = false) {
+            const data = { nodes: nodes.map(point => ({ x: Math.round(point.x), y: Math.round(point.y), c1: null, c2: null })), closed };
+            const path = new fabric.Path(buildEditablePathSvg(data), {
+                fill: closed ? 'rgba(55, 148, 255, .12)' : 'rgba(0,0,0,0)',
+                stroke: '#3794ff', strokeWidth: 3, strokeLineJoin: 'round', strokeLineCap: 'round', objectCaching: false
+            });
+            path.editablePathData = data;
+            prepareUserObject(path, closed ? '闭合贝塞尔路径' : '贝塞尔路径');
+            return path;
+        }
+
+        function clearPenPreview() {
+            if (penPreview) {
+                canvas.remove(penPreview);
+                penPreview = null;
+            }
+        }
+
+        function renderPenPreview(pointer = null) {
+            clearPenPreview();
+            if (!penPoints.length) return;
+            const points = pointer ? [...penPoints, pointer] : [...penPoints];
+            penPreview = new fabric.Polyline(points, {
+                fill: 'rgba(24,160,251,.08)', stroke: '#18a0fb', strokeWidth: 2, strokeDashArray: [6, 5],
+                selectable: false, evented: false, excludeFromExport: true, objectCaching: false
+            });
+            penPreview.isPenPreview = true;
+            canvas.add(penPreview);
+        }
+
+        function setPenToolState(enabled) {
+            isPenToolActive = enabled;
+            document.getElementById('btnPen').classList.toggle('active', enabled);
+            document.querySelector('.workspace').classList.toggle('pen-mode', enabled);
+            canvas.selection = !enabled;
+            canvas.skipTargetFind = enabled;
+            if (enabled) {
+                exitNodeEditor();
+                document.getElementById('pathEditorCard').classList.add('show');
+                document.getElementById('pathModeBadge').textContent = '钢笔模式';
+                document.getElementById('pathEditorHint').textContent = '单击画布添加锚点；按住 Shift 单击可直接创建曲线节点；双击或再次点击首个锚点完成；Esc 取消。';
+                showToast('钢笔模式已开启');
+            } else {
+                penPoints = [];
+                clearPenPreview();
+                canvas.selection = true;
+                canvas.skipTargetFind = false;
+                if (!isNodeEditorActive) document.getElementById('pathEditorCard').classList.remove('show');
+            }
+        }
+
+        function togglePenTool() {
+            setPenToolState(!isPenToolActive);
+        }
+
+        function finishPenPath(close = false) {
+            if (penPoints.length < 2) {
+                if (isPenToolActive) showToast('至少需要两个锚点才能创建路径');
+                return;
+            }
+            const path = createEditablePath(penPoints, close);
+            canvas.add(path);
+            canvas.setActiveObject(path);
+            setPenToolState(false);
+            historyManager.save();
+            updateCanvasUI();
+            showToast(close ? '已创建闭合贝塞尔路径' : '已创建开放贝塞尔路径');
+        }
+
+        function cancelPenPath() {
+            if (!isPenToolActive) return;
+            setPenToolState(false);
+            showToast('已取消当前路径');
+        }
+
+        function pathDataToCanvasPoint(path, point) {
+            const local = new fabric.Point(point.x - path.pathOffset.x, point.y - path.pathOffset.y);
+            return fabric.util.transformPoint(local, path.calcTransformMatrix());
+        }
+
+        function canvasPointToPathData(path, point) {
+            const inverse = fabric.util.invertTransform(path.calcTransformMatrix());
+            const local = fabric.util.transformPoint(point, inverse);
+            return { x: local.x + path.pathOffset.x, y: local.y + path.pathOffset.y };
+        }
+
+        function clearNodeControls() {
+            nodeControls.forEach(control => canvas.remove(control));
+            nodeControls = [];
+            selectedNodeIndex = null;
+        }
+
+        function getEditablePathSelection() {
+            const selected = canvas.getActiveObject();
+            return selected?.editablePathData ? selected : null;
+        }
+
+        function createNodeControl(path, nodeIndex, handle, point) {
+            const anchor = handle === 'anchor';
+            const control = new fabric.Circle({
+                left: point.x, top: point.y, originX: 'center', originY: 'center', radius: anchor ? 6 : 4.5,
+                fill: anchor ? '#ffffff' : '#18a0fb', stroke: anchor ? '#18a0fb' : '#ffffff', strokeWidth: 2,
+                selectable: true, evented: true, hasControls: false, hasBorders: false, excludeFromExport: true, objectCaching: false
+            });
+            control.isNodeControl = true;
+            control.nodeIndex = nodeIndex;
+            control.handle = handle;
+            control.pathTarget = path;
+            control.addClass?.(anchor ? 'node-control-anchor' : 'node-control-handle');
+            control.on('selected', () => { selectedNodeIndex = nodeIndex; updatePathEditorUI(); });
+            control.on('moving', () => updateEditableNodeFromControl(control));
+            control.on('mousedblclick', () => {
+                if (anchor) toggleNodeCurve(path, nodeIndex);
+            });
+            canvas.add(control);
+            nodeControls.push(control);
+            return control;
+        }
+
+        function renderNodeControls(path) {
+            clearNodeControls();
+            if (!path?.editablePathData) return;
+            path.editablePathData.nodes.forEach((node, index) => {
+                const anchorPoint = pathDataToCanvasPoint(path, node);
+                createNodeControl(path, index, 'anchor', anchorPoint);
+                if (node.c1) createNodeControl(path, index, 'c1', pathDataToCanvasPoint(path, node.c1));
+                if (node.c2) createNodeControl(path, index, 'c2', pathDataToCanvasPoint(path, node.c2));
+            });
+            canvas.requestRenderAll();
+        }
+
+        function updateEditableNodeFromControl(control) {
+            const path = control.pathTarget;
+            const node = path?.editablePathData?.nodes[control.nodeIndex];
+            if (!node) return;
+            const next = canvasPointToPathData(path, { x: control.left, y: control.top });
+            if (control.handle === 'anchor') {
+                const dx = next.x - node.x;
+                const dy = next.y - node.y;
+                node.x = next.x; node.y = next.y;
+                if (node.c1) { node.c1.x += dx; node.c1.y += dy; }
+                if (node.c2) { node.c2.x += dx; node.c2.y += dy; }
+            } else {
+                node[control.handle] = next;
+            }
+            refreshEditablePath(path);
+        }
+
+        function toggleNodeCurve(path, nodeIndex) {
+            const node = path?.editablePathData?.nodes[nodeIndex];
+            if (!node) return;
+            if (node.c1 || node.c2) {
+                node.c1 = null;
+                node.c2 = null;
+                showToast('节点已切换为直线');
+            } else {
+                node.c1 = { x: node.x - 55, y: node.y };
+                node.c2 = { x: node.x + 55, y: node.y };
+                showToast('节点已切换为贝塞尔曲线');
+            }
+            selectedNodeIndex = nodeIndex;
+            refreshEditablePath(path);
+            historyManager.save();
+            updatePathEditorUI();
+        }
+
+        function toggleSelectedNodeCurve() {
+            const path = getEditablePathSelection() || nodeControls[0]?.pathTarget;
+            if (!path) return showToast('请选择可编辑路径');
+            if (selectedNodeIndex === null) return showToast('请先选择一个锚点');
+            toggleNodeCurve(path, selectedNodeIndex);
+        }
+
+        function deleteSelectedNode() {
+            const path = getEditablePathSelection() || nodeControls[0]?.pathTarget;
+            if (!path || selectedNodeIndex === null) return showToast('请先选择一个锚点');
+            const nodes = path.editablePathData.nodes;
+            if (nodes.length <= 2) return showToast('路径至少需要保留两个锚点');
+            nodes.splice(selectedNodeIndex, 1);
+            selectedNodeIndex = null;
+            refreshEditablePath(path);
+            historyManager.save();
+            updatePathEditorUI();
+            showToast('已删除节点');
+        }
+
+        function updatePathEditorUI() {
+            const card = document.getElementById('pathEditorCard');
+            const path = getEditablePathSelection() || nodeControls[0]?.pathTarget;
+            card.classList.toggle('show', Boolean(isPenToolActive || isNodeEditorActive));
+            if (isNodeEditorActive && path) {
+                document.getElementById('pathModeBadge').textContent = `${path.editablePathData.nodes.length} 个节点`;
+                document.getElementById('pathEditorHint').textContent = '拖动白色锚点改变轮廓；双击锚点可添加或移除蓝色贝塞尔控制柄；拖动蓝色控制柄调整曲线方向。';
+            }
+        }
+
+        function enterNodeEditor(path) {
+            if (!path?.editablePathData) return showToast('请选择由钢笔工具创建的路径');
+            setPenToolState(false);
+            isNodeEditorActive = true;
+            document.getElementById('btnNode').classList.add('active');
+            path.selectable = false;
+            path.evented = false;
+            canvas.discardActiveObject();
+            renderNodeControls(path);
+            updatePathEditorUI();
+            showToast('节点编辑已开启');
+        }
+
+        function exitNodeEditor() {
+            if (!isNodeEditorActive && !nodeControls.length) return;
+            const path = nodeControls[0]?.pathTarget || getEditablePathSelection();
+            clearNodeControls();
+            if (path) { path.selectable = !path.locked; path.evented = !path.locked; canvas.setActiveObject(path); }
+            isNodeEditorActive = false;
+            document.getElementById('btnNode').classList.remove('active');
+            if (!isPenToolActive) document.getElementById('pathEditorCard').classList.remove('show');
+            canvas.requestRenderAll();
+            updateCanvasUI();
+        }
+
+        function toggleNodeEditor() {
+            if (isNodeEditorActive) return exitNodeEditor();
+            enterNodeEditor(canvas.getActiveObject());
+        }
+
+        canvas.on('mouse:down', option => {
+            if (!isPenToolActive) return;
+            const pointer = canvas.getPointer(option.e);
+            const firstPoint = penPoints[0];
+            const isCloseClick = penPoints.length > 2 && firstPoint && pointDistance(pointer, firstPoint) < 14;
+            if (isCloseClick) return finishPenPath(true);
+            penPoints.push({ x: pointer.x, y: pointer.y });
+            if (option.e.shiftKey) {
+                const point = penPoints[penPoints.length - 1];
+                point.c1 = { x: point.x - 55, y: point.y };
+                point.c2 = { x: point.x + 55, y: point.y };
+            }
+            if (option.e.detail === 2 && penPoints.length > 1) return finishPenPath(false);
+            renderPenPreview();
+        });
+
+        canvas.on('mouse:move', option => {
+            if (isPenToolActive && penPoints.length) renderPenPreview(canvas.getPointer(option.e));
+        });
+
         canvas.on('selection:cleared', () => {
             clearGuides();
         });
@@ -934,51 +1364,116 @@
             gridGroup.sendToBack();
         }
 
-        function exportContent(type) {
+        function calculateExportBounds() {
             const objects = getExportableObjects();
-            if(objects.length === 0) { showToast('画布为空，无法导出'); return; }
-            canvas.discardActiveObject();
+            if (!objects.length) return null;
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            objects.forEach(o => {
-                const r = o.getBoundingRect(true, true);
-                if(r.left < minX) minX = r.left;
-                if(r.top < minY) minY = r.top;
-                if(r.left + r.width > maxX) maxX = r.left + r.width;
-                if(r.top + r.height > maxY) maxY = r.top + r.height;
+            objects.forEach(object => {
+                const rect = object.getBoundingRect(true, true);
+                minX = Math.min(minX, rect.left);
+                minY = Math.min(minY, rect.top);
+                maxX = Math.max(maxX, rect.left + rect.width);
+                maxY = Math.max(maxY, rect.top + rect.height);
             });
             const padding = 20;
-            minX -= padding; minY -= padding;
-            maxX += padding; maxY += padding;
-            const w = maxX - minX;
-            const h = maxY - minY;
+            return { left: minX - padding, top: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
+        }
+
+        function exportContent(type, options = {}) {
+            if (type === 'project') return saveProject();
+            const bounds = calculateExportBounds();
+            if (!bounds) return showToast('画布为空，无法导出');
+            exitNodeEditor();
+            canvas.discardActiveObject();
+            const extension = type === 'jpg' ? 'jpg' : type;
             if (type === 'svg') {
                 const svgData = canvas.toSVG({
-                    viewBox: { x: minX, y: minY, width: w, height: h },
-                    width: w + 'px',
-                    height: h + 'px'
+                    viewBox: { x: bounds.left, y: bounds.top, width: bounds.width, height: bounds.height },
+                    width: `${Math.ceil(bounds.width)}px`, height: `${Math.ceil(bounds.height)}px`
                 });
-                const blob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
-                const url = URL.createObjectURL(blob);
-                downloadFile(url, `design-${Date.now()}.svg`);
-            } else {
-                const prevVpt = canvas.viewportTransform;
-                const prevW = canvas.width;
-                const prevH = canvas.height;
-                const prevBg = canvas.backgroundColor;
-                canvas.setWidth(w);
-                canvas.setHeight(h);
-                canvas.viewportTransform = [1, 0, 0, 1, -minX, -minY];
-                canvas.backgroundColor = null;
-                const dataURL = canvas.toDataURL({ format: 'png', multiplier: 2, enableRetinaScaling: true });
-                canvas.setWidth(prevW);
-                canvas.setHeight(prevH);
-                canvas.viewportTransform = prevVpt;
-                canvas.backgroundColor = prevBg;
-                canvas.requestRenderAll();
-                downloadFile(dataURL, `design-${Date.now()}.png`);
+                const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+                downloadFile(URL.createObjectURL(blob), `graphicon-${Date.now()}.svg`);
+                showToast('已导出 SVG 矢量图');
+                return;
             }
-            showToast(`已导出 ${type.toUpperCase()}`);
+            const scale = Math.min(4, Math.max(1, Number(options.scale || 2)));
+            const previousViewport = canvas.viewportTransform.slice();
+            const previousWidth = canvas.width;
+            const previousHeight = canvas.height;
+            const previousBackground = canvas.backgroundColor;
+            const transparent = type === 'png' || type === 'webp';
+            try {
+                canvas.setWidth(bounds.width);
+                canvas.setHeight(bounds.height);
+                canvas.viewportTransform = [1, 0, 0, 1, -bounds.left, -bounds.top];
+                canvas.backgroundColor = transparent ? null : '#ffffff';
+                const format = type === 'jpg' ? 'jpeg' : type;
+                const dataUrl = canvas.toDataURL({ format, quality: 0.94, multiplier: scale, enableRetinaScaling: true });
+                downloadFile(dataUrl, `graphicon-${Date.now()}-${scale}x.${extension}`);
+                showToast(`已导出 ${extension.toUpperCase()} ${scale}×`);
+            } finally {
+                canvas.setWidth(previousWidth);
+                canvas.setHeight(previousHeight);
+                canvas.viewportTransform = previousViewport;
+                canvas.backgroundColor = previousBackground;
+                canvas.requestRenderAll();
+                updateCanvasUI();
+            }
         }
+
+        function openExportPanel() {
+            const panel = document.getElementById('exportCard');
+            panel?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            panel?.classList.add('focus-ring');
+            window.setTimeout(() => panel?.classList.remove('focus-ring'), 800);
+        }
+
+        function exportFromPanel() {
+            const type = document.getElementById('exportFormat').value;
+            const scale = document.getElementById('exportScale').value;
+            exportContent(type, { scale });
+        }
+
+        async function generateAIVector() {
+            const promptInput = document.getElementById('aiPrompt');
+            const button = document.getElementById('aiGenerateBtn');
+            const status = document.getElementById('aiStatus');
+            const prompt = promptInput.value.trim();
+            if (prompt.length < 3) return showToast('请至少输入三个字符的设计描述');
+            if (window.location.protocol === 'file:') {
+                status.textContent = '当前为文件模式。请使用 npm start 启动本地服务器后再使用 AI 功能。';
+                return showToast('AI 功能需要通过本地服务器运行');
+            }
+            button.disabled = true;
+            status.textContent = '正在请求 AI 生成矢量图形…';
+            try {
+                const response = await fetch('/api/ai/generate-svg', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(result.error || 'AI 服务暂时不可用');
+                if (!result.svg || !result.svg.includes('<svg')) throw new Error('AI 未返回有效 SVG');
+                fabric.loadSVGFromString(result.svg, (objects, options) => {
+                    if (!objects?.length) return showToast('AI 返回的 SVG 无可编辑对象');
+                    const group = fabric.util.groupSVGElements(objects, options);
+                    group.scaleToWidth(Math.min(320, canvas.width * .55));
+                    prepareUserObject(group, `AI：${prompt.slice(0, 24)}${prompt.length > 24 ? '…' : ''}`);
+                    canvas.centerObject(group);
+                    canvas.add(group);
+                    canvas.setActiveObject(group);
+                    canvas.requestRenderAll();
+                    historyManager.save();
+                    status.textContent = '已生成可编辑 SVG；可继续调整、换色、分组和导出。';
+                    showToast('AI SVG 已添加到画布');
+                });
+            } catch (error) {
+                status.textContent = `AI 请求失败：${error.message}`;
+                showToast('AI 生成未完成，请检查服务器配置');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
         function downloadFile(url, name) {
             const anchor = document.createElement('a');
             anchor.href = url;
@@ -1789,6 +2284,9 @@
         document.addEventListener('keydown', event => {
             const tag = event.target.tagName;
             if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target.isContentEditable) return;
+            if (event.key === 'Escape') { if (isPenToolActive) cancelPenPath(); else if (isNodeEditorActive) exitNodeEditor(); return; }
+            if (event.key.toLowerCase() === 'p' && !event.ctrlKey && !event.metaKey) { event.preventDefault(); togglePenTool(); return; }
+            if (event.key.toLowerCase() === 'n' && !event.ctrlKey && !event.metaKey) { event.preventDefault(); toggleNodeEditor(); return; }
             const command = event.ctrlKey || event.metaKey;
             if (event.code === 'Space') { isSpacePressed = true; document.body.classList.add('is-panning'); event.preventDefault(); return; }
             if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); act('del'); }

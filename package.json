@@ -1,0 +1,14 @@
+{
+  "name": "graphicon",
+  "version": "0.3.0",
+  "private": true,
+  "description": "A browser-based vector editor with professional path editing and optional secure AI SVG generation.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node ../verify_graphicon.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,11 @@
+# Local AI credentials and runtime state
+.env
+.env.local
+
+# Dependencies and logs
+node_modules/
+*.log
+
+# OS/editor artifacts
+.DS_Store
+.vscode/
